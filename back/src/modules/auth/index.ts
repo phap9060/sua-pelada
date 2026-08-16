@@ -57,7 +57,14 @@ export const authModule = new Elysia({ prefix: "/auth" })
       });
       return publicUser(user);
     },
-    { body: t.Intersect([credentials, t.Object({ name: t.String({ minLength: 2 }), position })]) }
+    {
+      body: t.Object({
+        email: t.String({ format: "email" }),
+        password: t.String({ minLength: 6 }),
+        name: t.String({ minLength: 2 }),
+        position,
+      }),
+    }
   )
   .post(
     "/login",

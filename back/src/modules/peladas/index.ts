@@ -26,6 +26,20 @@ const scheduleFields = t.Object({
   confirmCloseTime: time,
 });
 
+// corpos planos (sem t.Intersect — evita validação estrita por membro que rejeita campos extras)
+const createBody = t.Object({
+  name: t.String({ minLength: 2, maxLength: 80 }),
+  selfRating: t.Integer({ minimum: 1, maximum: 5 }),
+  ...scheduleFields.properties,
+});
+
+const patchBody = t.Partial(
+  t.Object({
+    name: t.String({ minLength: 2, maxLength: 80 }),
+    ...scheduleFields.properties,
+  })
+);
+
 function publicPelada(p: typeof peladas.$inferSelect) {
   return {
     id: p.id,
@@ -69,15 +83,7 @@ export const peladasModule = new Elysia()
       });
       return publicPelada(pelada);
     },
-    {
-      body: t.Intersect([
-        scheduleFields,
-        t.Object({
-          name: t.String({ minLength: 2, maxLength: 80 }),
-          selfRating: t.Integer({ minimum: 1, maximum: 5 }),
-        }),
-      ]),
-    }
+    { body: createBody }
   )
 
   .get("/peladas/mine", async ({ user }) => {
@@ -143,7 +149,7 @@ export const peladasModule = new Elysia()
         .where(and(eq(games.peladaId, pelada.id), eq(games.status, "scheduled"), gt(games.confirmOpenAt, new Date())));
       return publicPelada(updated);
     },
-    { body: t.Partial(t.Intersect([scheduleFields, t.Object({ name: t.String({ minLength: 2, maxLength: 80 }) })])) }
+    { body: patchBody }
   )
 
   // ---- auxiliares (máx. 3, só o manager nomeia/remove) ----
