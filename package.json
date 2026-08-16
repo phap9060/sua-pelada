@@ -1,0 +1,11 @@
+{
+  "name": "sua-pelada",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:back": "bun --cwd back run dev",
+    "dev:front": "bun --cwd front run dev",
+    "build:front": "bun --cwd front run build",
+    "typecheck": "bun --cwd back run typecheck && bun --cwd front run build"
+  }
+}
