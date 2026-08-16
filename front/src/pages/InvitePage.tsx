@@ -39,7 +39,7 @@ export function InvitePage() {
             {info && (
               <Stack gap="md" align="center">
                 <Title order={2} ta="center">
-                  ⚽ {info.name}
+                  {info.name}
                 </Title>
                 <Text c="dimmed">
                   {info.membersCount} de {info.maxMembers} jogadores

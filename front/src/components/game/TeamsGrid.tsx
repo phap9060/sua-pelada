@@ -1,4 +1,6 @@
 import { Badge, Button, Card, Group, SimpleGrid, Stack, Text } from "@mantine/core";
+import { IconCrown } from "@tabler/icons-react";
+import { GloveIcon } from "../GloveIcon";
 import type { GamePayload } from "../../types";
 
 interface Props {
@@ -24,28 +26,28 @@ export function TeamsGrid({ game, canCrown, onCrown }: Props) {
             withBorder
             style={
               t.isChampion
-                ? { borderColor: "var(--mantine-color-yellow-5)", boxShadow: "0 0 14px rgba(234,179,8,0.35)" }
+                ? { borderColor: "var(--mantine-color-refletor-5)", boxShadow: "0 0 14px rgba(255,176,32,0.35)" }
                 : undefined
             }
           >
             <Group justify="space-between" mb={8}>
               <Text fw={700}>{t.name}</Text>
-              {t.isChampion && <Text fw={700}>👑</Text>}
+              {t.isChampion && <IconCrown size={18} style={{ color: "var(--mantine-color-refletor-5)" }} />}
             </Group>
             <Stack gap={2}>
               {t.players.map((p) => (
                 <Group key={p.id} gap="xs" wrap="nowrap">
                   <Text size="sm">{p.name}</Text>
                   {p.position === "keeper" && (
-                    <Badge color="yellow" variant="light" size="xs">
-                      🧤 goleiro
+                    <Badge color="refletor" variant="light" size="xs" leftSection={<GloveIcon size={12} />}>
+                      goleiro
                     </Badge>
                   )}
                 </Group>
               ))}
             </Stack>
             {canCrownNow && !t.isChampion && (
-              <Button variant="light" color="yellow" fullWidth mt="sm" onClick={() => onCrown(t.id)}>
+              <Button variant="light" color="refletor" fullWidth mt="sm" onClick={() => onCrown(t.id)}>
                 Consagrar campeão
               </Button>
             )}

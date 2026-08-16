@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Anchor, Button, Center, Container, Paper, PasswordInput, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Anchor, Button, Center, Container, Group, Paper, PasswordInput, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
+import { IconBallFootball } from "@tabler/icons-react";
 import { authService } from "../services/auth";
 import { useAuth } from "../hooks/useAuth";
 import { ErrorBox } from "../components/ui/ErrorBox";
+import { GloveIcon } from "../components/GloveIcon";
 import type { PlayerPosition } from "../types";
 
 export function Register() {
@@ -34,9 +36,12 @@ export function Register() {
         <Container size={420}>
           <Paper radius="lg" p="xl" withBorder shadow="md">
             <Stack gap="md">
-              <Title ta="center" order={2}>
-                ⚽ Cadastro
-              </Title>
+              <Group justify="center" gap="sm">
+                <IconBallFootball size={30} stroke={1.5} style={{ color: "var(--mantine-color-grass-5)" }} />
+                <Title ta="center" order={2}>
+                  SUA PELADA
+                </Title>
+              </Group>
               {error != null && <ErrorBox error={error} />}
               <form onSubmit={submit}>
                 <Stack gap="md">
@@ -70,8 +75,24 @@ export function Register() {
                       value={position}
                       onChange={(v) => setPosition(v as PlayerPosition)}
                       data={[
-                        { value: "line", label: "⚽ Jogador de linha" },
-                        { value: "keeper", label: "🧤 Goleiro" },
+                        {
+                          value: "line",
+                          label: (
+                            <Group gap={6} wrap="nowrap">
+                              <IconBallFootball size={16} stroke={1.5} />
+                              <span>Jogador de linha</span>
+                            </Group>
+                          ),
+                        },
+                        {
+                          value: "keeper",
+                          label: (
+                            <Group gap={6} wrap="nowrap">
+                              <GloveIcon size={16} />
+                              <span>Goleiro</span>
+                            </Group>
+                          ),
+                        },
                       ]}
                     />
                     <Text size="xs" c="dimmed" mt={6}>

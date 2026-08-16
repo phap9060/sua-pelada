@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Anchor, Button, Center, Container, Paper, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Anchor, Button, Center, Container, Group, Paper, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { IconBallFootball } from "@tabler/icons-react";
 import { authService } from "../services/auth";
 import { useAuth } from "../hooks/useAuth";
 import { ErrorBox } from "../components/ui/ErrorBox";
@@ -31,9 +32,12 @@ export function Login() {
         <Container size={420}>
           <Paper radius="lg" p="xl" withBorder shadow="md">
             <Stack gap="md">
-              <Title ta="center" order={2}>
-                ⚽ Sua Pelada
-              </Title>
+              <Group justify="center" gap="sm">
+                <IconBallFootball size={30} stroke={1.5} style={{ color: "var(--mantine-color-grass-5)" }} />
+                <Title ta="center" order={2}>
+                  SUA PELADA
+                </Title>
+              </Group>
               {error != null && <ErrorBox error={error} />}
               <form onSubmit={submit}>
                 <Stack gap="md">

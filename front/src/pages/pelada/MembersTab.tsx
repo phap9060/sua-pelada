@@ -4,6 +4,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
 import { useAppointAssistant, useRemoveAssistant, useTriggerRatingRound } from "../../hooks/usePelada";
 import { BallRating } from "../../components/BallRating";
+import { GloveIcon } from "../../components/GloveIcon";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import type { PeladaDetail } from "../../types";
 
@@ -121,12 +122,12 @@ export function MembersTab({ detail }: Props) {
               <Group gap="sm">
                 <Text>{m.name}</Text>
                 {m.position === "keeper" && (
-                  <Badge color="yellow" variant="light" size="xs">
-                    🧤 goleiro
+                  <Badge color="refletor" variant="light" size="xs" leftSection={<GloveIcon size={12} />}>
+                    goleiro
                   </Badge>
                 )}
                 {m.role === "manager" && (
-                  <Badge color="yellow" variant="light">
+                  <Badge color="refletor" variant="light">
                     manager
                   </Badge>
                 )}

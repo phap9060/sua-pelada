@@ -34,7 +34,7 @@ export function PeladaDetail() {
             {WEEKDAYS[pelada.gameWeekday]} {pelada.gameTime} · {members.length}/50
           </Text>
         </Title>
-        {isManager && <Badge color="yellow" variant="light">manager</Badge>}
+        {isManager && <Badge color="refletor" variant="light">manager</Badge>}
         {myRole === "assistant" && <Badge color="grass" variant="light">auxiliar</Badge>}
       </Group>
 

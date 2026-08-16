@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { Badge, Button, Card, CopyButton, Group, SegmentedControl, Stack, Text, Title } from "@mantine/core";
-import { IconCheck, IconCopy, IconPlus } from "@tabler/icons-react";
+import { IconBallFootball, IconCheck, IconCopy, IconPlus } from "@tabler/icons-react";
 import { useMine } from "../hooks/useMine";
 import { useAuth, useUpdatePosition } from "../hooks/useAuth";
+import { GloveIcon } from "../components/GloveIcon";
 import { ErrorBox } from "../components/ui/ErrorBox";
 import { Loading } from "../components/ui/Loading";
 import { WEEKDAYS } from "../utils/date";
@@ -33,8 +34,24 @@ export function Home() {
             onChange={(v) => updatePosition.mutate(v as PlayerPosition)}
             disabled={updatePosition.isPending}
             data={[
-              { value: "line", label: "⚽ Linha" },
-              { value: "keeper", label: "🧤 Goleiro" },
+              {
+                value: "line",
+                label: (
+                  <Group gap={6} wrap="nowrap">
+                    <IconBallFootball size={14} stroke={1.5} />
+                    <span>Linha</span>
+                  </Group>
+                ),
+              },
+              {
+                value: "keeper",
+                label: (
+                  <Group gap={6} wrap="nowrap">
+                    <GloveIcon size={14} />
+                    <span>Goleiro</span>
+                  </Group>
+                ),
+              },
             ]}
           />
         </Group>

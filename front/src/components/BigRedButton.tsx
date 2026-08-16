@@ -6,12 +6,13 @@ interface BigRedButtonProps {
   disabled?: boolean;
   inList?: boolean;
   pulse?: boolean;
+  locked?: boolean;
   onClick?: () => void;
 }
 
 /** O botão gigante vermelho de confirmar presença. */
-export function BigRedButton({ label, sublabel, disabled, inList, pulse, onClick }: BigRedButtonProps) {
-  const cls = ["big-red", inList ? "in-list" : "", pulse ? "pulse" : ""].join(" ").trim();
+export function BigRedButton({ label, sublabel, disabled, inList, pulse, locked, onClick }: BigRedButtonProps) {
+  const cls = ["big-red", inList ? "in-list" : "", pulse ? "pulse" : "", locked ? "locked" : ""].join(" ").trim();
   return (
     <div className="big-red-wrap">
       <Button className={cls} radius="xl" disabled={disabled} onClick={onClick}>

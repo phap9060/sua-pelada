@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AppShell, Badge, Burger, Button, Container, Group, NavLink, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconBell, IconHome, IconLogout, IconStar } from "@tabler/icons-react";
+import { IconBallFootball, IconBell, IconHome, IconLogout, IconStar } from "@tabler/icons-react";
 import { useAuth } from "../hooks/useAuth";
 import { useNotifications } from "../hooks/useNotifications";
 import { usePendingRatings } from "../hooks/useRatings";
@@ -57,16 +57,14 @@ export function Layout() {
         <Group h="100%" px="md" justify="space-between">
           <Group gap="sm">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Text
-              component={Link}
-              to="/"
-              fw={800}
-              size="lg"
-              c="grass.5"
-              style={{ textDecoration: "none" }}
-            >
-              ⚽ Sua Pelada
-            </Text>
+            <Link to="/" style={{ textDecoration: "none" }}>
+              <Group gap={8}>
+                <IconBallFootball size={26} stroke={1.5} style={{ color: "var(--mantine-color-grass-5)" }} />
+                <Text fw={400} size="lg" c="grass.4" style={{ fontFamily: "Bungee, system-ui, sans-serif", letterSpacing: "0.02em" }}>
+                  SUA PELADA
+                </Text>
+              </Group>
+            </Link>
           </Group>
           <Group gap="md">
             <Text c="dimmed" size="sm" visibleFrom="sm">

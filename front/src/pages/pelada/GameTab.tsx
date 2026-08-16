@@ -3,10 +3,12 @@ import { useCancelConfirmation, useConfirmGame, useCrownChampion, useCrownGoalke
 import { ConfirmationButton } from "../../components/game/ConfirmationButton";
 import { ConfirmationList } from "../../components/game/ConfirmationList";
 import { TeamsGrid } from "../../components/game/TeamsGrid";
+import { Scoreboard } from "../../components/game/Scoreboard";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import { Loading } from "../../components/ui/Loading";
 import { Badge, Button, Card, Group, Stack, Text } from "@mantine/core";
-import { fmtDateTime } from "../../utils/date";
+import { IconCrown } from "@tabler/icons-react";
+import { GloveIcon } from "../../components/GloveIcon";
 
 interface Props {
   peladaId: string;
@@ -31,14 +33,9 @@ export function GameTab({ peladaId, canManage, listCapacity }: Props) {
 
   return (
     <Stack gap="md">
+      <Scoreboard game={game} now={now} listCapacity={listCapacity} />
+
       <Card shadow="sm" padding="lg" radius="lg" withBorder>
-        <Text fw={700} size="lg">
-          Próximo jogo
-        </Text>
-        <Text c="dimmed" size="sm" mt={4}>
-          {fmtDateTime(game.gameAt)} · confirmação abre {fmtDateTime(game.confirmOpenAt)} e fecha{" "}
-          {fmtDateTime(game.confirmCloseAt)}
-        </Text>
         <ConfirmationButton
           game={game}
           now={now}
@@ -57,9 +54,12 @@ export function GameTab({ peladaId, canManage, listCapacity }: Props) {
 
       {game.rotatingGoalkeepers.length > 0 && showTeams && (
         <Card shadow="sm" padding="lg" radius="lg" withBorder>
-          <Text fw={700} size="lg" mb="sm">
-            🧤 Fila de goleiros (rotação)
-          </Text>
+          <Group gap="xs" mb="sm">
+            <GloveIcon size={20} color="var(--mantine-color-refletor-5)" />
+            <Text fw={700} size="lg">
+              Fila de goleiros (rotação)
+            </Text>
+          </Group>
           <Text c="dimmed" size="sm" mb="sm">
             Menos goleiros que times: eles rodam entre as partidas, na ordem de confirmação.
           </Text>
@@ -67,13 +67,11 @@ export function GameTab({ peladaId, canManage, listCapacity }: Props) {
             {game.rotatingGoalkeepers.map((g, i) => (
               <Group key={g.userId} justify="space-between">
                 <Group gap="sm">
-                  <Text c="dimmed" w={28} ta="right">
-                    {i + 1}º
-                  </Text>
+                  <span className="shirt-num">{i + 1}º</span>
                   <Text>{g.name}</Text>
                 </Group>
-                <Badge color="yellow" variant="light" size="xs">
-                  🧤 goleiro
+                <Badge color="refletor" variant="light" size="xs" leftSection={<GloveIcon size={12} />}>
+                  goleiro
                 </Badge>
               </Group>
             ))}
@@ -84,10 +82,18 @@ export function GameTab({ peladaId, canManage, listCapacity }: Props) {
       {showTeams && game.goalkeepers.length > 0 && (
         <Card shadow="sm" padding="lg" radius="lg" withBorder>
           <Group justify="space-between" mb="sm">
-            <Text fw={700} size="lg">
-              🧤 Goleiro campeão
-            </Text>
-            {game.championGoalkeeper && <Text fw={700}>👑 {game.championGoalkeeper.name}</Text>}
+            <Group gap="xs">
+              <GloveIcon size={20} color="var(--mantine-color-refletor-5)" />
+              <Text fw={700} size="lg">
+                Goleiro campeão
+              </Text>
+            </Group>
+            {game.championGoalkeeper && (
+              <Group gap={4}>
+                <IconCrown size={16} style={{ color: "var(--mantine-color-refletor-5)" }} />
+                <Text fw={700}>{game.championGoalkeeper.name}</Text>
+              </Group>
+            )}
           </Group>
           {!game.championGoalkeeper && (
             <Text c="dimmed" size="sm" mb="sm">
@@ -100,14 +106,14 @@ export function GameTab({ peladaId, canManage, listCapacity }: Props) {
                 <Group key={g.userId} justify="space-between">
                   <Group gap="sm">
                     <Text>{g.name}</Text>
-                    <Badge color="yellow" variant="light" size="xs">
-                      🧤
+                    <Badge color="refletor" variant="light" size="xs" leftSection={<GloveIcon size={12} />}>
+                      goleiro
                     </Badge>
                     {g.teamId ? <Badge size="xs" variant="light">{game.teams.find((t) => t.id === g.teamId)?.name}</Badge> : <Badge size="xs" variant="light">rotação</Badge>}
                   </Group>
                   <Button
                     variant="light"
-                    color="yellow"
+                    color="refletor"
                     size="xs"
                     loading={crownKeeper.isPending}
                     onClick={() => crownKeeper.mutate({ gameId: game.id, userId: g.userId })}

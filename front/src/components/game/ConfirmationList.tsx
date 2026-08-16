@@ -1,4 +1,5 @@
 import { Badge, Card, Group, Stack, Text } from "@mantine/core";
+import { GloveIcon } from "../GloveIcon";
 import { fmtTimeWithSeconds } from "../../utils/date";
 import type { GamePayload } from "../../types";
 
@@ -7,7 +8,7 @@ interface Props {
   listCapacity: number;
 }
 
-/** Lista de confirmados: titulares (ordem de clique) e suplentes. */
+/** Lista de confirmados como escalação: números de camisa, titulares e suplentes. */
 export function ConfirmationList({ game, listCapacity }: Props) {
   const total = game.titulares.length + game.suplentes.length;
   const rows = [
@@ -20,21 +21,23 @@ export function ConfirmationList({ game, listCapacity }: Props) {
       <Text fw={700} size="lg" mb="sm">
         Lista ({total})
       </Text>
-      {rows.length === 0 && <Text c="dimmed" ta="center" py="md">Ninguém confirmou ainda.</Text>}
+      {rows.length === 0 && (
+        <Text c="dimmed" ta="center" py="md">
+          Ninguém confirmou ainda — garanta a primeira vaga.
+        </Text>
+      )}
       <Stack gap={6}>
         {rows.map((c) => (
           <Group key={c.userId} justify="space-between" px="xs" py={6} bg={c.kind === "titular" ? "rgba(34,197,94,0.07)" : undefined} style={{ borderRadius: 8 }}>
             <Group gap="sm">
-              <Text c="dimmed" fw={700} w={32} ta="right">
-                {c.pos}º
-              </Text>
+              <span className="shirt-num">{c.pos}º</span>
               <Text>{c.name}</Text>
               {c.position === "keeper" && (
-                <Badge color="yellow" variant="light" size="xs">
-                  🧤
+                <Badge color="refletor" variant="light" size="xs" leftSection={<GloveIcon size={12} />}>
+                  goleiro
                 </Badge>
               )}
-              <Text c="dimmed" size="xs">
+              <Text c="dimmed" size="xs" className="digits">
                 às {fmtTimeWithSeconds(c.confirmedAt)}
               </Text>
             </Group>

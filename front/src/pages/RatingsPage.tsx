@@ -30,7 +30,7 @@ export function RatingsPage() {
       {items.length === 0 && (
         <Card shadow="sm" padding="lg" radius="lg" withBorder>
           <Text c="dimmed" ta="center">
-            Nada pendente. Você avaliou todo mundo! ⚽
+            Nada pendente. Você avaliou todo mundo!
           </Text>
         </Card>
       )}

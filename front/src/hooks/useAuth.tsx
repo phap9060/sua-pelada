@@ -65,7 +65,7 @@ export function useUpdatePosition() {
       queryClient.setQueryData<User | null>(ME_KEY, (current) => (current ? { ...current, position: updated.position } : current));
       notifications.show({
         title: "Posição atualizada",
-        message: updated.position === "keeper" ? "Você agora joga como goleiro 🧤" : "Você agora joga na linha ⚽",
+        message: updated.position === "keeper" ? "Você agora joga como goleiro" : "Você agora joga na linha",
         color: "grass",
       });
     },

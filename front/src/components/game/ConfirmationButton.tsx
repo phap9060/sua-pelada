@@ -1,6 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@mantine/core";
 import { BigRedButton } from "../BigRedButton";
-import { fmtDateTime } from "../../utils/date";
+import { fmtCountdown } from "../../utils/date";
 import type { GamePayload } from "../../types";
 
 interface Props {
@@ -18,6 +19,18 @@ export function ConfirmationButton({ game, now, isBusy, onConfirm, onCancel }: P
   const canEdit = game.status === "open" || game.status === "scheduled";
   const isOpen = now >= openAt && now < closeAt && canEdit;
 
+  // payoff do clique: anima uma vez quando a confirmação acaba de acontecer
+  const [justLocked, setJustLocked] = useState(false);
+  const wasConfirmed = useRef(game.myConfirmation);
+  useEffect(() => {
+    if (!wasConfirmed.current && game.myConfirmation) {
+      setJustLocked(true);
+      const t = setTimeout(() => setJustLocked(false), 700);
+      return () => clearTimeout(t);
+    }
+    wasConfirmed.current = game.myConfirmation;
+  }, [game.myConfirmation]);
+
   let label: string;
   let sublabel: string;
   let disabled = true;
@@ -31,13 +44,13 @@ export function ConfirmationButton({ game, now, isBusy, onConfirm, onCancel }: P
     inList = true;
   } else if (isOpen) {
     label = "Confirmar";
-    sublabel = `Fecha ${fmtDateTime(game.confirmCloseAt)} — clique rápido, a ordem define a lista!`;
+    sublabel = `Fecha em ${fmtCountdown(closeAt - now)} — clique rápido, a ordem define a lista!`;
     disabled = isBusy;
     pulse = true;
     onClick = onConfirm;
-  } else if (!(now >= closeAt || game.status === "drawn" || game.status === "finished")) {
+  } else if (now < closeAt && canEdit) {
     label = "Confirmar";
-    sublabel = `Abre ${fmtDateTime(game.confirmOpenAt)}`;
+    sublabel = `Abre em ${fmtCountdown(openAt - now)}`;
   } else {
     label = "Fechado";
     sublabel = "A confirmação encerrou";
@@ -45,7 +58,15 @@ export function ConfirmationButton({ game, now, isBusy, onConfirm, onCancel }: P
 
   return (
     <>
-      <BigRedButton label={label} sublabel={sublabel} disabled={disabled} inList={inList} pulse={pulse} onClick={onClick} />
+      <BigRedButton
+        label={label}
+        sublabel={sublabel}
+        disabled={disabled}
+        inList={inList}
+        pulse={pulse}
+        locked={justLocked}
+        onClick={onClick}
+      />
       {game.myConfirmation && canEdit && (
         <div style={{ textAlign: "center" }}>
           <Button color="red" variant="light" disabled={isBusy} onClick={onCancel}>

@@ -44,7 +44,7 @@ export function useCrownChampion(peladaId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gameKey(peladaId) });
       queryClient.invalidateQueries({ queryKey: ALL_GAMES_KEY });
-      notifications.show({ title: "👑 Campeão consagrado!", message: "O time campeão entrou para o histórico da pelada.", color: "grass" });
+      notifications.show({ title: "Campeão consagrado!", message: "O time campeão entrou para o histórico da pelada.", color: "grass" });
     },
   });
 }
@@ -57,7 +57,7 @@ export function useCrownGoalkeeper(peladaId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gameKey(peladaId) });
       queryClient.invalidateQueries({ queryKey: ALL_GAMES_KEY });
-      notifications.show({ title: "🧤 Goleiro campeão consagrado!", message: "O goleiro entrou para o histórico da pelada.", color: "grass" });
+      notifications.show({ title: "Goleiro campeão consagrado!", message: "O goleiro entrou para o histórico da pelada.", color: "grass" });
     },
   });
 }
