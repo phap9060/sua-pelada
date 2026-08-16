@@ -14,12 +14,19 @@ export function Register() {
   const [password, setPassword] = useState("");
   const [position, setPosition] = useState<PlayerPosition>("line");
   const [error, setError] = useState<unknown>(null);
+  const [emailError, setEmailError] = useState("");
   const { setUser } = useAuth();
   const navigate = useNavigate();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    // mesmo critério do back: domínio precisa ter ponto (ex: 123@123.com)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setEmailError("E-mail inválido. Use um formato como nome@dominio.com");
+      return;
+    }
+    setEmailError("");
     try {
       const user = await authService.register({ name, email, password, position });
       setUser(user);
@@ -56,7 +63,11 @@ export function Register() {
                     label="E-mail"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (emailError) setEmailError("");
+                    }}
+                    error={emailError || undefined}
                     required
                   />
                   <PasswordInput

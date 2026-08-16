@@ -19,6 +19,15 @@ const app = new Elysia()
       credentials: true,
     })
   )
+  // erro de validação amigável (em produção o Elysia esconde o detalhe — o usuário
+  // precisa entender o que ajustar sem vazar o schema)
+  .onError(({ code, error, set }) => {
+    if (code === "VALIDATION") {
+      set.status = 422;
+      return { message: "Dados inválidos. Confira os campos: e-mail válido, senha com pelo menos 6 caracteres e posição." };
+    }
+    return error;
+  })
   .get("/health", () => ({ ok: true }))
   .use(authModule)
   .use(peladasModule)
