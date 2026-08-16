@@ -62,6 +62,22 @@ export const peladaMembers = pgTable(
   (t) => [uniqueIndex("pelada_members_unique").on(t.peladaId, t.userId)]
 );
 
+// auxiliares da pelada (máx. 3, nomeados pelo manager)
+export const peladaAssistants = pgTable(
+  "pelada_assistants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    peladaId: uuid("pelada_id")
+      .notNull()
+      .references(() => peladas.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("pelada_assistants_unique").on(t.peladaId, t.userId)]
+);
+
 export const ratings = pgTable(
   "ratings",
   {

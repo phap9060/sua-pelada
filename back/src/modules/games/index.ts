@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "../../db";
 import { authed } from "../auth";
-import { getPelada, isMember } from "../../lib/guards";
+import { getPelada, isManagerOrAssistant, isMember } from "../../lib/guards";
 import { ensureCurrentGame, goalkeeperState } from "../../lib/draw";
 
 const { games, gameConfirmations, teams, teamPlayers, users, peladas } = schema;
@@ -135,7 +135,7 @@ export const gamesModule = new Elysia()
       const [game] = await db.select().from(games).where(eq(games.id, params.id)).limit(1);
       if (!game) return status(404, { message: "Jogo não encontrado" });
       const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
-      if (pelada.managerId !== user.id) return status(403, { message: "Apenas o manager pode consagrar o campeão" });
+      if (!(await isManagerOrAssistant(pelada.id, user.id))) return status(403, { message: "Apenas o manager ou um auxiliar pode consagrar o campeão" });
       if (game.status !== "drawn") return status(400, { message: "O sorteio ainda não aconteceu" });
       const [team] = await db
         .select()
@@ -157,7 +157,7 @@ export const gamesModule = new Elysia()
       const [game] = await db.select().from(games).where(eq(games.id, params.id)).limit(1);
       if (!game) return status(404, { message: "Jogo não encontrado" });
       const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
-      if (pelada.managerId !== user.id) return status(403, { message: "Apenas o manager pode consagrar o campeão" });
+      if (!(await isManagerOrAssistant(pelada.id, user.id))) return status(403, { message: "Apenas o manager ou um auxiliar pode consagrar o campeão" });
       if (game.status !== "drawn" && game.status !== "finished") {
         return status(400, { message: "O sorteio ainda não aconteceu" });
       }

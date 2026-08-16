@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Badge, Box, Button, Card, CopyButton, Group, Modal, Stack, Text, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
-import { useTriggerRatingRound } from "../../hooks/usePelada";
+import { useAppointAssistant, useRemoveAssistant, useTriggerRatingRound } from "../../hooks/usePelada";
 import { BallRating } from "../../components/BallRating";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import type { PeladaDetail } from "../../types";
@@ -11,18 +11,21 @@ interface Props {
   detail: PeladaDetail;
 }
 
+const MAX_ASSISTANTS = 3;
+
 export function MembersTab({ detail }: Props) {
   const { pelada, myRole, members } = detail;
   const [copied, setCopied] = useState(false);
   const ratingRound = useTriggerRatingRound(pelada.id);
+  const appoint = useAppointAssistant(pelada.id);
+  const remove = useRemoveAssistant(pelada.id);
   const isManager = myRole === "manager";
+  const canManage = myRole !== "member";
   const inviteUrl = `${window.location.origin}/invite/${pelada.inviteToken}`;
   const [confirmOpen, { open: openConfirm, close: closeConfirm }] = useDisclosure(false);
 
-  const triggerRound = () => {
-    closeConfirm();
-    ratingRound.mutate();
-  };
+  const assistantCount = members.filter((m) => m.role === "assistant").length;
+  const atLimit = assistantCount >= MAX_ASSISTANTS;
 
   const copy = async () => {
     await navigator.clipboard.writeText(inviteUrl);
@@ -30,9 +33,14 @@ export function MembersTab({ detail }: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const triggerRound = () => {
+    closeConfirm();
+    ratingRound.mutate();
+  };
+
   return (
     <Stack gap="md">
-      {isManager && (
+      {canManage && (
         <Card shadow="sm" padding="lg" radius="lg" withBorder>
           <Title order={3} size="lg">
             Convite
@@ -101,6 +109,12 @@ export function MembersTab({ detail }: Props) {
         <Title order={3} size="lg" mb="sm">
           Membros ({members.length}/50)
         </Title>
+        {isManager && (
+          <Text c="dimmed" size="sm" mb="sm">
+            Auxiliares ({assistantCount}/{MAX_ASSISTANTS}): podem consagrar campeões, editar a pelada e disparar
+            rodadas de avaliação.
+          </Text>
+        )}
         <Stack gap={6}>
           {members.map((m) => (
             <Group key={m.userId} justify="space-between" px="xs" py={6} style={{ borderRadius: 8 }}>
@@ -111,13 +125,34 @@ export function MembersTab({ detail }: Props) {
                     🧤 goleiro
                   </Badge>
                 )}
-                {m.isManager && (
+                {m.role === "manager" && (
                   <Badge color="yellow" variant="light">
                     manager
                   </Badge>
                 )}
+                {m.role === "assistant" && (
+                  <Badge color="grass" variant="light">
+                    auxiliar
+                  </Badge>
+                )}
               </Group>
               <Group gap={6}>
+                {isManager && m.role === "member" && (
+                  <Button
+                    size="xs"
+                    variant="light"
+                    disabled={atLimit || appoint.isPending}
+                    onClick={() => appoint.mutate(m.userId)}
+                    title={atLimit ? `Limite de ${MAX_ASSISTANTS} auxiliares` : "Nomear auxiliar"}
+                  >
+                    Nomear auxiliar
+                  </Button>
+                )}
+                {isManager && m.role === "assistant" && (
+                  <Button size="xs" variant="light" color="red" disabled={remove.isPending} onClick={() => remove.mutate(m.userId)}>
+                    Remover
+                  </Button>
+                )}
                 <BallRating value={m.avgRating} readOnly size={20} fractions={2} position={m.position} />
                 <Text c="dimmed" size="sm">
                   {m.avgRating.toFixed(1)}
@@ -126,6 +161,7 @@ export function MembersTab({ detail }: Props) {
             </Group>
           ))}
         </Stack>
+        {appoint.isError && <ErrorBox error={appoint.error} />}
       </Card>
     </Stack>
   );

@@ -10,11 +10,11 @@ import { fmtDateTime } from "../../utils/date";
 
 interface Props {
   peladaId: string;
-  isManager: boolean;
+  canManage: boolean;
   listCapacity: number;
 }
 
-export function GameTab({ peladaId, isManager, listCapacity }: Props) {
+export function GameTab({ peladaId, canManage, listCapacity }: Props) {
   const now = useNow();
   const { data: game, isLoading, isError, error } = useGame(peladaId);
   const confirm = useConfirmGame(peladaId);
@@ -27,7 +27,7 @@ export function GameTab({ peladaId, isManager, listCapacity }: Props) {
   if (!game) return <Loading label="Aguardando jogo…" />;
 
   const showTeams = (game.status === "drawn" || game.status === "finished") && game.teams.length > 0;
-  const canCrownKeeper = isManager && (game.status === "drawn" || game.status === "finished") && game.goalkeepers.length > 0 && !game.championGoalkeeper;
+  const canCrownKeeper = canManage && (game.status === "drawn" || game.status === "finished") && game.goalkeepers.length > 0 && !game.championGoalkeeper;
 
   return (
     <Stack gap="md">
@@ -52,7 +52,7 @@ export function GameTab({ peladaId, isManager, listCapacity }: Props) {
       <ConfirmationList game={game} listCapacity={listCapacity} />
 
       {showTeams && (
-        <TeamsGrid game={game} isManager={isManager} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
+        <TeamsGrid game={game} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
       )}
 
       {game.rotatingGoalkeepers.length > 0 && showTeams && (

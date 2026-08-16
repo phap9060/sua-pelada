@@ -10,4 +10,6 @@ export const peladasService = {
   currentGame: (id: string) => unwrap(api.peladas({ id }).game.get()),
   triggerRatingRound: (id: string) => unwrap(api.peladas({ id })["rating-round"].post()),
   stats: (id: string) => unwrap(api.peladas({ id }).stats.get()),
+  appointAssistant: (id: string, userId: string) => unwrap(api.peladas({ id }).assistants.post({ userId })),
+  removeAssistant: (id: string, userId: string) => unwrap(api.peladas({ id }).assistants({ userId }).delete()),
 };

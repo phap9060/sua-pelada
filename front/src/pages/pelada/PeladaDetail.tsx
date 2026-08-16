@@ -23,6 +23,7 @@ export function PeladaDetail() {
 
   const { pelada, myRole, members } = detail;
   const isManager = myRole === "manager";
+  const canManage = myRole !== "member";
 
   return (
     <>
@@ -34,6 +35,7 @@ export function PeladaDetail() {
           </Text>
         </Title>
         {isManager && <Badge color="yellow" variant="light">manager</Badge>}
+        {myRole === "assistant" && <Badge color="grass" variant="light">auxiliar</Badge>}
       </Group>
 
       <Tabs value={tab} onChange={(v) => setTab((v ?? "jogo") as Tab)} variant="pills" mb="md">
@@ -41,14 +43,14 @@ export function PeladaDetail() {
           <Tabs.Tab value="jogo">Jogo</Tabs.Tab>
           <Tabs.Tab value="membros">Membros</Tabs.Tab>
           <Tabs.Tab value="stats">Estatísticas</Tabs.Tab>
-          {isManager && <Tabs.Tab value="config">Configurar</Tabs.Tab>}
+          {canManage && <Tabs.Tab value="config">Configurar</Tabs.Tab>}
         </Tabs.List>
       </Tabs>
 
-      {tab === "jogo" && <GameTab peladaId={pelada.id} isManager={isManager} listCapacity={pelada.listCapacity} />}
+      {tab === "jogo" && <GameTab peladaId={pelada.id} canManage={canManage} listCapacity={pelada.listCapacity} />}
       {tab === "membros" && <MembersTab detail={detail} />}
       {tab === "stats" && <StatsTab peladaId={pelada.id} />}
-      {tab === "config" && isManager && <ConfigTab detail={detail} />}
+      {tab === "config" && canManage && <ConfigTab detail={detail} />}
     </>
   );
 }

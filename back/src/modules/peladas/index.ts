@@ -1,14 +1,15 @@
 import { Elysia, t } from "elysia";
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { db, schema } from "../../db";
 import { authed } from "../auth";
 import { averageRatings } from "../../lib/ratings";
 import { notify } from "../../lib/notify";
-import { getPelada, isMember, memberIds } from "../../lib/guards";
+import { getPelada, isManagerOrAssistant, isMember, memberIds } from "../../lib/guards";
 
-const { peladas, peladaMembers, ratings, ratingRequests, games, users } = schema;
+const { peladas, peladaMembers, peladaAssistants, ratings, ratingRequests, games, users } = schema;
 
 const MAX_MEMBERS = 50;
+const MAX_ASSISTANTS = 3;
 
 const weekday = t.Integer({ minimum: 0, maximum: 6 });
 const time = t.String({ pattern: "^([01]\\d|2[0-3]):[0-5]\\d$" });
@@ -103,16 +104,25 @@ export const peladasModule = new Elysia()
       .where(eq(peladaMembers.peladaId, pelada.id))
       .orderBy(asc(peladaMembers.joinedAt));
 
+    const assistants = await db
+      .select({ userId: peladaAssistants.userId })
+      .from(peladaAssistants)
+      .where(eq(peladaAssistants.peladaId, pelada.id));
+    const assistantIds = new Set(assistants.map((a) => a.userId));
+
+    const roleOf = (userId: string): "manager" | "assistant" | "member" =>
+      userId === pelada.managerId ? "manager" : assistantIds.has(userId) ? "assistant" : "member";
+
     const averages = await averageRatings(pelada.id);
     return {
       pelada: publicPelada(pelada),
-      myRole: pelada.managerId === user.id ? ("manager" as const) : ("member" as const),
+      myRole: roleOf(user.id),
       members: members.map((m) => ({
         userId: m.userId,
         name: m.name,
         position: m.position,
+        role: roleOf(m.userId),
         joinedAt: m.joinedAt,
-        isManager: m.userId === pelada.managerId,
         avgRating: Math.round((averages.get(m.userId) ?? 3) * 100) / 100,
       })),
     };
@@ -123,7 +133,7 @@ export const peladasModule = new Elysia()
     async ({ params, body, user, status }) => {
       const pelada = await getPelada(params.id);
       if (!pelada) return status(404, { message: "Pelada não encontrada" });
-      if (pelada.managerId !== user.id) return status(403, { message: "Apenas o manager pode editar" });
+      if (!(await isManagerOrAssistant(pelada.id, user.id))) return status(403, { message: "Apenas o manager ou um auxiliar pode editar" });
       const [updated] = await db.update(peladas).set(body).where(eq(peladas.id, pelada.id)).returning();
       // recria jogos futuros ainda não abertos com a nova configuração
       await db
@@ -133,6 +143,48 @@ export const peladasModule = new Elysia()
     },
     { body: t.Partial(t.Intersect([scheduleFields, t.Object({ name: t.String({ minLength: 2, maxLength: 80 }) })])) }
   )
+
+  // ---- auxiliares (máx. 3, só o manager nomeia/remove) ----
+
+  .post(
+    "/peladas/:id/assistants",
+    async ({ params, body, user, status }) => {
+      const pelada = await getPelada(params.id);
+      if (!pelada) return status(404, { message: "Pelada não encontrada" });
+      if (pelada.managerId !== user.id) return status(403, { message: "Apenas o manager pode nomear auxiliares" });
+      if (body.userId === pelada.managerId) return status(400, { message: "O manager não pode ser auxiliar" });
+      if (!(await isMember(pelada.id, body.userId))) return status(400, { message: "O usuário não é membro desta pelada" });
+
+      const existing = await db
+        .select({ id: peladaAssistants.id })
+        .from(peladaAssistants)
+        .where(and(eq(peladaAssistants.peladaId, pelada.id), eq(peladaAssistants.userId, body.userId)))
+        .limit(1);
+      if (existing.length > 0) return status(409, { message: "Este usuário já é auxiliar" });
+
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(peladaAssistants)
+        .where(eq(peladaAssistants.peladaId, pelada.id));
+      if (count >= MAX_ASSISTANTS) return status(400, { message: `Limite de ${MAX_ASSISTANTS} auxiliares atingido` });
+
+      await db.insert(peladaAssistants).values({ peladaId: pelada.id, userId: body.userId });
+      const [target] = await db.select({ name: users.name }).from(users).where(eq(users.id, body.userId)).limit(1);
+      await notify([body.userId], "assistant", { peladaId: pelada.id, peladaName: pelada.name });
+      return { ok: true, name: target?.name };
+    },
+    { body: t.Object({ userId: t.String() }) }
+  )
+
+  .delete("/peladas/:id/assistants/:userId", async ({ params, user, status }) => {
+    const pelada = await getPelada(params.id);
+    if (!pelada) return status(404, { message: "Pelada não encontrada" });
+    if (pelada.managerId !== user.id) return status(403, { message: "Apenas o manager pode remover auxiliares" });
+    await db
+      .delete(peladaAssistants)
+      .where(and(eq(peladaAssistants.peladaId, pelada.id), eq(peladaAssistants.userId, params.userId)));
+    return { ok: true };
+  })
 
   // ---- convites ----
 

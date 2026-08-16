@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia";
-import { and, asc, eq, isNull, lt, ne, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, lt } from "drizzle-orm";
 import { db, schema } from "../../db";
 import { authed } from "../auth";
-import { getPelada, isMember, memberIds } from "../../lib/guards";
+import { getPelada, isManagerOrAssistant, memberIds } from "../../lib/guards";
 import { notify } from "../../lib/notify";
 
 const { ratings, ratingRequests, peladas, peladaMembers, users } = schema;
@@ -69,7 +69,7 @@ export const ratingsModule = new Elysia()
   .post("/peladas/:id/rating-round", async ({ params, user, status }) => {
     const pelada = await getPelada(params.id);
     if (!pelada) return status(404, { message: "Pelada não encontrada" });
-    if (pelada.managerId !== user.id) return status(403, { message: "Apenas o manager pode disparar a rodada" });
+    if (!(await isManagerOrAssistant(pelada.id, user.id))) return status(403, { message: "Apenas o manager ou um auxiliar pode disparar a rodada" });
 
     const newRound = pelada.ratingRound + 1;
     await db.update(peladas).set({ ratingRound: newRound }).where(eq(peladas.id, pelada.id));

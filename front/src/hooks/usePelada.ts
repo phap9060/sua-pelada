@@ -35,3 +35,25 @@ export function useTriggerRatingRound(peladaId: string) {
     },
   });
 }
+
+export function useAppointAssistant(peladaId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => peladasService.appointAssistant(peladaId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: peladaKey(peladaId) });
+      notifications.show({ title: "Auxiliar nomeado", message: "Agora ele pode consagrar campeões, editar a pelada e disparar rodadas.", color: "grass" });
+    },
+  });
+}
+
+export function useRemoveAssistant(peladaId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => peladasService.removeAssistant(peladaId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: peladaKey(peladaId) });
+      notifications.show({ title: "Auxiliar removido", message: "Ele voltou a ser um membro comum.", color: "yellow" });
+    },
+  });
+}

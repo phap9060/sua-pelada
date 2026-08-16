@@ -3,13 +3,13 @@ import type { GamePayload } from "../../types";
 
 interface Props {
   game: GamePayload;
-  isManager: boolean;
+  canCrown: boolean;
   onCrown: (teamId: string) => void;
 }
 
-/** Times sorteados + ação do manager de consagrar o campeão do dia. */
-export function TeamsGrid({ game, isManager, onCrown }: Props) {
-  const canCrown = isManager && game.status === "drawn";
+/** Times sorteados + ação do manager/auxiliar de consagrar o campeão do dia. */
+export function TeamsGrid({ game, canCrown, onCrown }: Props) {
+  const canCrownNow = canCrown && game.status === "drawn";
   return (
     <Card shadow="sm" padding="lg" radius="lg" withBorder>
       <Text fw={700} size="lg" mb="sm">
@@ -44,7 +44,7 @@ export function TeamsGrid({ game, isManager, onCrown }: Props) {
                 </Group>
               ))}
             </Stack>
-            {canCrown && !t.isChampion && (
+            {canCrownNow && !t.isChampion && (
               <Button variant="light" color="yellow" fullWidth mt="sm" onClick={() => onCrown(t.id)}>
                 Consagrar campeão
               </Button>
@@ -52,7 +52,7 @@ export function TeamsGrid({ game, isManager, onCrown }: Props) {
           </Card>
         ))}
       </SimpleGrid>
-      {canCrown && (
+      {canCrownNow && (
         <Text c="dimmed" size="sm" mt="sm">
           Ao fim da pelada, consagre o time que mais ganhou no dia.
         </Text>

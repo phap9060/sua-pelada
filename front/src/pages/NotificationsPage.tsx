@@ -16,6 +16,8 @@ function message(type: string, data: Record<string, unknown>): string {
       return `A confirmação de presença ABRIU na pelada ${data.peladaName}. Corra para o botão!`;
     case "teams_drawn":
       return `Os times da pelada ${data.peladaName} foram sorteados. Confira!`;
+    case "assistant":
+      return `Você virou auxiliar da pelada ${data.peladaName}! Agora pode consagrar campeões, editar a pelada e disparar rodadas de avaliação.`;
     default:
       return "Nova notificação";
   }
