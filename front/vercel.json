@@ -1,5 +1,8 @@
 {
   "installCommand": "bun install && cd ../back && bun install",
   "buildCommand": "bun run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://sua-pelada-production.up.railway.app/:path*" }
+  ]
 }
