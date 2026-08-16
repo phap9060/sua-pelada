@@ -20,7 +20,8 @@ export function CreatePelada() {
     initialValues: {
       name: "",
       selfRating: 3,
-      listCapacity: 20,
+      listCapacity: 18,
+      keeperCapacity: 3,
       playersPerTeam: 5,
       gameWeekday: "2",
       gameTime: "19:00",
@@ -32,6 +33,7 @@ export function CreatePelada() {
     validate: {
       name: (v) => (v.trim().length >= 2 ? null : "Informe o nome da pelada"),
       listCapacity: (v) => (v >= 2 && v <= 50 ? null : "Vagas entre 2 e 50"),
+      keeperCapacity: (v) => (v >= 0 && v <= 50 ? null : "Vagas entre 0 e 50"),
       playersPerTeam: (v) => (v >= 2 && v <= 15 ? null : "Jogadores por time entre 2 e 15"),
     },
   });
@@ -41,6 +43,7 @@ export function CreatePelada() {
       {
         ...values,
         listCapacity: Number(values.listCapacity),
+        keeperCapacity: Number(values.keeperCapacity),
         playersPerTeam: Number(values.playersPerTeam),
         gameWeekday: Number(values.gameWeekday),
         confirmOpenWeekday: Number(values.confirmOpenWeekday),
@@ -80,9 +83,10 @@ export function CreatePelada() {
               </div>
 
               <Group grow>
-                <NumberInput label="Vagas na lista (titulares)" min={2} max={50} {...form.getInputProps("listCapacity")} />
-                <NumberInput label="Jogadores por time" min={2} max={15} {...form.getInputProps("playersPerTeam")} />
+                <NumberInput label="Vagas de linha (titulares)" min={2} max={50} {...form.getInputProps("listCapacity")} />
+                <NumberInput label="Vagas de goleiro" min={0} max={50} {...form.getInputProps("keeperCapacity")} />
               </Group>
+              <NumberInput label="Jogadores por time" min={2} max={15} maw={200} {...form.getInputProps("playersPerTeam")} />
 
               <Title order={4}>Jogo semanal</Title>
               <Group grow>

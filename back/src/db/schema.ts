@@ -35,7 +35,8 @@ export const peladas = pgTable("peladas", {
     .references(() => users.id),
   inviteToken: text("invite_token").notNull().unique(),
   // config do jogo (editável)
-  listCapacity: integer("list_capacity").notNull().default(20),
+  listCapacity: integer("list_capacity").notNull().default(20), // vagas de LINHA
+  keeperCapacity: integer("keeper_capacity").notNull().default(3), // vagas de GOLEIRO
   playersPerTeam: integer("players_per_team").notNull().default(5),
   gameWeekday: integer("game_weekday").notNull().default(2), // 0=domingo
   gameTime: text("game_time").notNull().default("19:00"),

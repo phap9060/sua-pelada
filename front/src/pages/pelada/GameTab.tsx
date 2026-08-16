@@ -13,10 +13,9 @@ import { GloveIcon } from "../../components/GloveIcon";
 interface Props {
   peladaId: string;
   canManage: boolean;
-  listCapacity: number;
 }
 
-export function GameTab({ peladaId, canManage, listCapacity }: Props) {
+export function GameTab({ peladaId, canManage }: Props) {
   const now = useNow();
   const { data: game, isLoading, isError, error } = useGame(peladaId);
   const confirm = useConfirmGame(peladaId);
@@ -33,7 +32,7 @@ export function GameTab({ peladaId, canManage, listCapacity }: Props) {
 
   return (
     <Stack gap="md">
-      <Scoreboard game={game} now={now} listCapacity={listCapacity} />
+      <Scoreboard game={game} now={now} />
 
       <Card shadow="sm" padding="lg" radius="lg" withBorder>
         <ConfirmationButton
@@ -46,7 +45,7 @@ export function GameTab({ peladaId, canManage, listCapacity }: Props) {
         {confirm.isError && <ErrorBox error={confirm.error} />}
       </Card>
 
-      <ConfirmationList game={game} listCapacity={listCapacity} />
+      <ConfirmationList game={game} />
 
       {showTeams && (
         <TeamsGrid game={game} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />

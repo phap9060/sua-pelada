@@ -18,9 +18,24 @@ export function useConfirmGame(peladaId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (gameId: string) => gamesService.confirm(gameId),
-    onSuccess: () => {
+    onSuccess: (game) => {
       queryClient.invalidateQueries({ queryKey: gameKey(peladaId) });
-      notifications.show({ title: "Confirmado!", message: "Você está na lista. A ordem do clique define titulares.", color: "grass" });
+      const p = game.myPlacement;
+      if (!p) {
+        notifications.show({ title: "Confirmado!", message: "Você está na lista.", color: "grass" });
+      } else if (p.kind === "titular") {
+        notifications.show({
+          title: "Vaga garantida!",
+          message: `Você é titular de ${p.group === "keeper" ? "goleiro" : "linha"} (${p.pos}º/${p.total}).`,
+          color: "grass",
+        });
+      } else {
+        notifications.show({
+          title: "Confirmado como suplente",
+          message: `Você entrou na fila de ${p.group === "keeper" ? "goleiros" : "linha"} na posição ${p.pos}º.`,
+          color: "yellow",
+        });
+      }
     },
   });
 }

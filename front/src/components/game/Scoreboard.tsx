@@ -5,7 +5,6 @@ import type { GamePayload } from "../../types";
 interface Props {
   game: GamePayload;
   now: number;
-  listCapacity: number;
 }
 
 function statusChip(game: GamePayload, now: number) {
@@ -18,8 +17,8 @@ function statusChip(game: GamePayload, now: number) {
   return { label: "ESPERA", color: "gray" as const };
 }
 
-/** Placar do jogo: data/hora em dígitos de campo, status e contagem regressiva. */
-export function Scoreboard({ game, now, listCapacity }: Props) {
+/** Placar do jogo: data/hora em dígitos de campo, status, contagem e cotas. */
+export function Scoreboard({ game, now }: Props) {
   const openAt = new Date(game.confirmOpenAt).getTime();
   const closeAt = new Date(game.confirmCloseAt).getTime();
   const chip = statusChip(game, now);
@@ -29,7 +28,8 @@ export function Scoreboard({ game, now, listCapacity }: Props) {
   else if (now < closeAt) countdown = `fecha em ${fmtCountdown(closeAt - now)}`;
   else countdown = "encerrada";
 
-  const confirmed = game.titulares.length + game.suplentes.length;
+  const lines = game.line.titulares.length + game.line.suplentes.length;
+  const keepers = game.keepers.titulares.length + game.keepers.suplentes.length;
 
   return (
     <Card shadow="sm" padding="lg" radius="lg" withBorder>
@@ -48,7 +48,7 @@ export function Scoreboard({ game, now, listCapacity }: Props) {
               {countdown}
             </Text>
             <Text size="xs" c="dimmed">
-              {confirmed}/{listCapacity} confirmados
+              {lines}/{game.listCapacity} linha · {keepers}/{game.keeperCapacity} goleiros
             </Text>
           </Stack>
           <Badge color={chip.color} variant="light" size="lg" className="digits" style={{ letterSpacing: "0.06em" }}>

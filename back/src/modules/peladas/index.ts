@@ -16,6 +16,7 @@ const time = t.String({ pattern: "^([01]\\d|2[0-3]):[0-5]\\d$" });
 
 const scheduleFields = t.Object({
   listCapacity: t.Integer({ minimum: 2, maximum: MAX_MEMBERS }),
+  keeperCapacity: t.Integer({ minimum: 0, maximum: MAX_MEMBERS }),
   playersPerTeam: t.Integer({ minimum: 2, maximum: 15 }),
   gameWeekday: weekday,
   gameTime: time,
@@ -32,6 +33,7 @@ function publicPelada(p: typeof peladas.$inferSelect) {
     managerId: p.managerId,
     inviteToken: p.inviteToken,
     listCapacity: p.listCapacity,
+    keeperCapacity: p.keeperCapacity,
     playersPerTeam: p.playersPerTeam,
     gameWeekday: p.gameWeekday,
     gameTime: p.gameTime,

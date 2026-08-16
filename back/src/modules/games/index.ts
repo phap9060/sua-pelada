@@ -1,24 +1,76 @@
 import { Elysia, t } from "elysia";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { db, schema } from "../../db";
 import { authed } from "../auth";
 import { getPelada, isManagerOrAssistant, isMember } from "../../lib/guards";
-import { ensureCurrentGame, goalkeeperState } from "../../lib/draw";
+import { ensureCurrentGame, getQuotaLists, goalkeeperState } from "../../lib/draw";
 
 const { games, gameConfirmations, teams, teamPlayers, users, peladas } = schema;
 
-async function gamePayload(game: typeof games.$inferSelect, listCapacity: number, userId: string) {
-  const confirmations = await db
-    .select({
-      userId: gameConfirmations.userId,
-      name: users.name,
-      position: users.position,
-      confirmedAt: gameConfirmations.confirmedAt,
-    })
-    .from(gameConfirmations)
-    .innerJoin(users, eq(users.id, gameConfirmations.userId))
-    .where(eq(gameConfirmations.gameId, game.id))
-    .orderBy(asc(gameConfirmations.confirmedAt));
+type Placement = { group: "line" | "keeper"; kind: "titular" | "suplente"; pos: number; total: number } | null;
+
+interface ConfirmRow {
+  userId: string;
+  name: string;
+  position: string;
+  confirmedAt: Date;
+}
+
+function buildGroup(
+  group: "line" | "keeper",
+  titulares: ConfirmRow[],
+  suplentes: ConfirmRow[],
+  capacity: number,
+  userId: string
+) {
+  const withPos = {
+    titulares: titulares.map((c, i) => ({ ...c, pos: i + 1 })),
+    suplentes: suplentes.map((c, i) => ({ ...c, pos: i + 1 })),
+  };
+  let myPlacement: Placement = null;
+  const tIdx = withPos.titulares.findIndex((c) => c.userId === userId);
+  if (tIdx >= 0) {
+    myPlacement = { group, kind: "titular", pos: tIdx + 1, total: capacity };
+  } else {
+    const sIdx = withPos.suplentes.findIndex((c) => c.userId === userId);
+    if (sIdx >= 0) {
+      myPlacement = { group, kind: "suplente", pos: sIdx + 1, total: withPos.suplentes.length };
+    }
+  }
+  return { group: withPos, myPlacement };
+}
+
+async function gamePayload(game: typeof games.$inferSelect, pelada: typeof peladas.$inferSelect, userId: string) {
+  const quotas = await getQuotaLists(game.id, pelada.listCapacity, pelada.keeperCapacity);
+
+  // nomes e posições dos confirmados
+  const allIds = [...quotas.line.titulares, ...quotas.line.suplentes, ...quotas.keepers.titulares, ...quotas.keepers.suplentes].map(
+    (c) => c.userId
+  );
+  const names = allIds.length
+    ? await db
+        .select({ id: users.id, name: users.name, position: users.position })
+        .from(users)
+        .where(inArray(users.id, allIds))
+    : [];
+  const nameMap = new Map(names.map((n) => [n.id, { name: n.name, position: n.position }]));
+
+  const withName = (c: { userId: string; confirmedAt: Date }) => ({
+    userId: c.userId,
+    name: nameMap.get(c.userId)?.name ?? "?",
+    position: (nameMap.get(c.userId)?.position ?? "line") as string,
+    confirmedAt: c.confirmedAt,
+  });
+
+  const lineGroup = buildGroup("line", quotas.line.titulares.map(withName), quotas.line.suplentes.map(withName), pelada.listCapacity, userId);
+  const keeperGroup = buildGroup(
+    "keeper",
+    quotas.keepers.titulares.map(withName),
+    quotas.keepers.suplentes.map(withName),
+    pelada.keeperCapacity,
+    userId
+  );
+  const myPlacement = lineGroup.myPlacement ?? keeperGroup.myPlacement;
 
   const teamRows = await db
     .select({
@@ -53,10 +105,12 @@ async function gamePayload(game: typeof games.$inferSelect, listCapacity: number
 
   // goleiros do jogo: em time (teamId) ou na fila de rotação (teamId null), em ordem de confirmação
   const { inTeams, rotation } = await goalkeeperState(game.id);
-  const titulares = confirmations.slice(0, listCapacity);
-  const goalkeepers = titulares
-    .filter((c) => c.position === "keeper")
-    .map((c) => ({ userId: c.userId, name: c.name, teamId: inTeams.get(c.userId) ?? null }));
+  const keepersInGame = quotas.keepers.titulares;
+  const goalkeepers = keepersInGame.map((c) => ({
+    userId: c.userId,
+    name: nameMap.get(c.userId)?.name ?? "?",
+    teamId: inTeams.get(c.userId) ?? null,
+  }));
 
   let championGoalkeeper: { id: string; name: string } | null = null;
   if (game.championGoalkeeperId) {
@@ -70,14 +124,17 @@ async function gamePayload(game: typeof games.$inferSelect, listCapacity: number
     gameAt: game.gameAt,
     confirmOpenAt: game.confirmOpenAt,
     confirmCloseAt: game.confirmCloseAt,
-    titulares: titulares.map((c) => ({ ...c, kind: "titular" as const })),
-    suplentes: confirmations.slice(listCapacity).map((c) => ({ ...c, kind: "suplente" as const })),
-    myConfirmation: confirmations.some((c) => c.userId === userId),
+    listCapacity: pelada.listCapacity,
+    keeperCapacity: pelada.keeperCapacity,
+    line: lineGroup.group,
+    keepers: keeperGroup.group,
+    myPlacement,
+    myConfirmation: myPlacement !== null,
     teams: [...teamMap.values()],
     // fila de rotação (quando há menos goleiros que times) — goleiros sem time fixo
     rotatingGoalkeepers: rotation.map((r) => ({
       userId: r.userId,
-      name: goalkeepers.find((g) => g.userId === r.userId)?.name ?? "",
+      name: nameMap.get(r.userId)?.name ?? "",
     })),
     goalkeepers,
     championGoalkeeper,
@@ -93,7 +150,7 @@ export const gamesModule = new Elysia()
     if (!pelada) return status(404, { message: "Pelada não encontrada" });
     if (!(await isMember(pelada.id, user.id))) return status(403, { message: "Você não é membro desta pelada" });
     const game = await ensureCurrentGame(pelada);
-    return gamePayload(game, pelada.listCapacity, user.id);
+    return gamePayload(game, pelada, user.id);
   })
 
   // confirmar presença (ordem de clique define titulares e suplentes)
@@ -111,7 +168,7 @@ export const gamesModule = new Elysia()
       .values({ gameId: game.id, userId: user.id })
       .onConflictDoNothing({ target: [gameConfirmations.gameId, gameConfirmations.userId] });
     const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
-    return gamePayload(game, pelada.listCapacity, user.id);
+    return gamePayload(game, pelada, user.id);
   })
 
   // desistir (antes do sorteio); suplente sobe automaticamente pela ordem
@@ -125,7 +182,7 @@ export const gamesModule = new Elysia()
       .delete(gameConfirmations)
       .where(and(eq(gameConfirmations.gameId, game.id), eq(gameConfirmations.userId, user.id)));
     const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
-    return gamePayload(game, pelada.listCapacity, user.id);
+    return gamePayload(game, pelada, user.id);
   })
 
   // manager consagra o time campeão do dia
@@ -145,7 +202,7 @@ export const gamesModule = new Elysia()
       if (!team) return status(404, { message: "Time não encontrado neste jogo" });
       await db.update(teams).set({ isChampion: true }).where(eq(teams.id, team.id));
       await db.update(games).set({ status: "finished" }).where(eq(games.id, game.id));
-      return gamePayload({ ...game, status: "finished" }, pelada.listCapacity, user.id);
+      return gamePayload({ ...game, status: "finished" }, pelada, user.id);
     },
     { body: t.Object({ teamId: t.String() }) }
   )
@@ -168,7 +225,7 @@ export const gamesModule = new Elysia()
         return status(400, { message: "Goleiro não está neste jogo" });
       }
       await db.update(games).set({ championGoalkeeperId: body.userId }).where(eq(games.id, game.id));
-      return gamePayload({ ...game, championGoalkeeperId: body.userId }, pelada.listCapacity, user.id);
+      return gamePayload({ ...game, championGoalkeeperId: body.userId }, pelada, user.id);
     },
     { body: t.Object({ userId: t.String() }) }
   );

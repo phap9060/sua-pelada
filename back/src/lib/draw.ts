@@ -11,9 +11,9 @@ export interface Titular {
   position: "line" | "keeper";
 }
 
-/** Titulares do jogo (ordem de confirmação) com a posição de cada um. */
-export async function getTitulares(gameId: string, capacity: number): Promise<Titular[]> {
-  const confirmations = await db
+/** Confirmados do jogo (ordem de confirmação) com a posição de cada um. */
+export async function getConfirmations(gameId: string) {
+  return db
     .select({
       userId: gameConfirmations.userId,
       confirmedAt: gameConfirmations.confirmedAt,
@@ -23,7 +23,22 @@ export async function getTitulares(gameId: string, capacity: number): Promise<Ti
     .innerJoin(users, eq(users.id, gameConfirmations.userId))
     .where(eq(gameConfirmations.gameId, gameId))
     .orderBy(asc(gameConfirmations.confirmedAt));
-  return confirmations.slice(0, capacity);
+}
+
+/**
+ * Cotas independentes por posição:
+ * - titulares de linha: primeiros `lineCapacity` na ordem de clique
+ * - titulares de goleiro: primeiros `keeperCapacity` na ordem de clique
+ * - excedentes de cada posição viram filas de suplentes separadas
+ */
+export async function getQuotaLists(gameId: string, lineCapacity: number, keeperCapacity: number) {
+  const confirmations = await getConfirmations(gameId);
+  const lines = confirmations.filter((c) => c.position === "line");
+  const keepers = confirmations.filter((c) => c.position === "keeper");
+  return {
+    line: { titulares: lines.slice(0, lineCapacity), suplentes: lines.slice(lineCapacity) },
+    keepers: { titulares: keepers.slice(0, keeperCapacity), suplentes: keepers.slice(keeperCapacity) },
+  };
 }
 
 /**
@@ -40,7 +55,8 @@ export async function goalkeeperState(gameId: string) {
   const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
   if (!pelada) return { inTeams: new Map<string, string>(), rotation: [] as Titular[], excluded: [] as Titular[] };
 
-  const titulares = await getTitulares(gameId, pelada.listCapacity);
+  const quotas = await getQuotaLists(gameId, pelada.listCapacity, pelada.keeperCapacity);
+  const titulares = [...quotas.line.titulares, ...quotas.keepers.titulares];
   const keepers = titulares.filter((t) => t.position === "keeper");
   const lines = titulares.filter((t) => t.position === "line");
   const k = Math.max(1, Math.ceil(lines.length / pelada.playersPerTeam));
@@ -83,7 +99,8 @@ export async function performDraw(gameId: string) {
   const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
   if (!pelada) return;
 
-  const titulares = await getTitulares(gameId, pelada.listCapacity);
+  const quotas = await getQuotaLists(gameId, pelada.listCapacity, pelada.keeperCapacity);
+  const titulares = [...quotas.line.titulares, ...quotas.keepers.titulares];
   const keepers = titulares.filter((t) => t.position === "keeper");
   const lines = titulares.filter((t) => t.position === "line");
 
