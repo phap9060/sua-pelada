@@ -11,11 +11,18 @@ import type { SQL } from "drizzle-orm";
 async function createDb(): Promise<PostgresJsDatabase<typeof schema>> {
   const url = process.env.DATABASE_URL;
   if (url) {
+    console.log("[db] usando PostgreSQL via DATABASE_URL");
     return drizzlePg(postgres(url, { prepare: false }), { schema });
+  }
+  // Em produção NUNCA cair no PGlite (banco efêmero) — falhe alto para o problema aparecer
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "DATABASE_URL não definida em produção. Conecte o plugin PostgreSQL ao serviço na Railway (o serviço deve exibir DATABASE_URL na aba Variables)."
+    );
   }
   const { PGlite } = await import("@electric-sql/pglite");
   const dir = process.env.PGLITE_DIR ?? "./.pglite";
-  console.log(`[db] DATABASE_URL ausente — usando PGlite em ${dir}`);
+  console.log(`[db] DATABASE_URL ausente — usando PGlite em ${dir} (dev local)`);
   return drizzlePglite(new PGlite(dir), { schema }) as unknown as PostgresJsDatabase<typeof schema>;
 }
 
