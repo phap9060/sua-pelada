@@ -1,10 +1,14 @@
-import { Badge, Card, Group, Stack, Text } from "@mantine/core";
+import { Badge, Button, Card, Group, Stack, Text } from "@mantine/core";
+import { IconBrandWhatsapp } from "@tabler/icons-react";
 import { GloveIcon } from "../GloveIcon";
 import { fmtTimeWithSeconds } from "../../utils/date";
+import { buildWhatsAppListMessage, whatsappShareUrl } from "../../utils/share";
 import type { GamePayload } from "../../types";
 
 interface Props {
   game: GamePayload;
+  peladaId: string;
+  peladaName: string;
 }
 
 interface Row {
@@ -74,16 +78,33 @@ function Section({
 }
 
 /** Lista de confirmados em duas cotas: linha e goleiros, cada uma com sua fila. */
-export function ConfirmationList({ game }: Props) {
+export function ConfirmationList({ game, peladaId, peladaName }: Props) {
   const lineCount = game.line.titulares.length + game.line.suplentes.length;
   const keeperCount = game.keepers.titulares.length + game.keepers.suplentes.length;
   const total = lineCount + keeperCount;
 
+  const shareWhatsApp = () => {
+    const appUrl = `${window.location.origin}/peladas/${peladaId}`;
+    window.open(whatsappShareUrl(buildWhatsAppListMessage(game, peladaName, appUrl)), "_blank");
+  };
+
   return (
     <Card shadow="sm" padding="lg" radius="lg" withBorder>
-      <Text fw={700} size="lg" mb="sm">
-        Lista ({total})
-      </Text>
+      <Group justify="space-between" mb="sm">
+        <Text fw={700} size="lg">
+          Lista ({total})
+        </Text>
+        <Button
+          variant="light"
+          color="grass"
+          size="xs"
+          leftSection={<IconBrandWhatsapp size={16} />}
+          onClick={shareWhatsApp}
+          disabled={total === 0}
+        >
+          Compartilhar no WhatsApp
+        </Button>
+      </Group>
       {total === 0 && (
         <Text c="dimmed" ta="center" py="md">
           Ninguém confirmou ainda — garanta a primeira vaga.

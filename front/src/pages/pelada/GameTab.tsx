@@ -12,10 +12,11 @@ import { GloveIcon } from "../../components/GloveIcon";
 
 interface Props {
   peladaId: string;
+  peladaName: string;
   canManage: boolean;
 }
 
-export function GameTab({ peladaId, canManage }: Props) {
+export function GameTab({ peladaId, peladaName, canManage }: Props) {
   const now = useNow();
   const { data: game, isLoading, isError, error } = useGame(peladaId);
   const confirm = useConfirmGame(peladaId);
@@ -45,7 +46,7 @@ export function GameTab({ peladaId, canManage }: Props) {
         {confirm.isError && <ErrorBox error={confirm.error} />}
       </Card>
 
-      <ConfirmationList game={game} />
+      <ConfirmationList game={game} peladaId={peladaId} peladaName={peladaName} />
 
       {showTeams && (
         <TeamsGrid game={game} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />

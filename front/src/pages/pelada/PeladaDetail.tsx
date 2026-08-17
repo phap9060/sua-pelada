@@ -47,7 +47,7 @@ export function PeladaDetail() {
         </Tabs.List>
       </Tabs>
 
-      {tab === "jogo" && <GameTab peladaId={pelada.id} canManage={canManage} />}
+      {tab === "jogo" && <GameTab peladaId={pelada.id} peladaName={pelada.name} canManage={canManage} />}
       {tab === "membros" && <MembersTab detail={detail} />}
       {tab === "stats" && <StatsTab peladaId={pelada.id} />}
       {tab === "config" && canManage && <ConfigTab detail={detail} />}
