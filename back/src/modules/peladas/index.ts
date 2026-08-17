@@ -215,16 +215,17 @@ export const peladasModule = new Elysia()
         stars: body.selfRating,
         round: pelada.ratingRound,
       });
-      // membros existentes são convocados a avaliar o novo
+      // existentes avaliam o novo, e o novo avalia quem já estava
       if (others.length > 0) {
-        await db.insert(ratingRequests).values(
-          others.map((raterId) => ({
-            peladaId: pelada.id,
-            raterId,
-            rateeId: user.id,
-            round: pelada.ratingRound,
-          }))
-        );
+        await db
+          .insert(ratingRequests)
+          .values(
+            [
+              ...others.map((raterId) => ({ raterId, rateeId: user.id })),
+              ...others.map((rateeId) => ({ raterId: user.id, rateeId })),
+            ].map((r) => ({ ...r, peladaId: pelada.id, round: pelada.ratingRound }))
+          )
+          .onConflictDoNothing({ target: [ratingRequests.peladaId, ratingRequests.raterId, ratingRequests.rateeId, ratingRequests.round] });
         await notify(others, "new_member", {
           peladaId: pelada.id,
           peladaName: pelada.name,
