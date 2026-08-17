@@ -40,6 +40,7 @@ export const peladas = pgTable("peladas", {
   playersPerTeam: integer("players_per_team").notNull().default(5),
   gameWeekday: integer("game_weekday").notNull().default(2), // 0=domingo
   gameTime: text("game_time").notNull().default("19:00"),
+  gameDuration: integer("game_duration").notNull().default(120), // minutos
   confirmOpenWeekday: integer("confirm_open_weekday").notNull().default(2),
   confirmOpenTime: text("confirm_open_time").notNull().default("08:00"),
   confirmCloseWeekday: integer("confirm_close_weekday").notNull().default(2),

@@ -25,6 +25,7 @@ export function CreatePelada() {
       playersPerTeam: 5,
       gameWeekday: "2",
       gameTime: "19:00",
+      gameDuration: 120,
       confirmOpenWeekday: "2",
       confirmOpenTime: "08:00",
       confirmCloseWeekday: "2",
@@ -92,6 +93,7 @@ export function CreatePelada() {
               <Group grow>
                 <Select label="Dia do jogo" data={weekdayData} {...form.getInputProps("gameWeekday")} />
                 <TextInput label="Horário" type="time" {...form.getInputProps("gameTime")} />
+                <NumberInput label="Duração (min)" min={15} max={480} step={15} {...form.getInputProps("gameDuration")} />
               </Group>
 
               <Title order={4}>Confirmação de presença</Title>

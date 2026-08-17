@@ -6,6 +6,7 @@ export interface CreatePeladaInput {
   playersPerTeam: number;
   gameWeekday: number;
   gameTime: string;
+  gameDuration: number;
   confirmOpenWeekday: number;
   confirmOpenTime: string;
   confirmCloseWeekday: number;

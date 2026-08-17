@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Badge, Group, Tabs, Text, Title } from "@mantine/core";
 import { usePelada } from "../../hooks/usePelada";
-import { WEEKDAYS } from "../../utils/date";
+import { fmtEndTime, WEEKDAYS } from "../../utils/date";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import { Loading } from "../../components/ui/Loading";
 import { GameTab } from "./GameTab";
@@ -31,7 +31,7 @@ export function PeladaDetail() {
         <Title order={2}>
           {pelada.name}{" "}
           <Text component="span" c="dimmed" size="md" fw={400}>
-            {WEEKDAYS[pelada.gameWeekday]} {pelada.gameTime} · {members.length}/50
+            {WEEKDAYS[pelada.gameWeekday]} {pelada.gameTime}–{fmtEndTime(pelada.gameTime, pelada.gameDuration)} · {members.length}/50 membros
           </Text>
         </Title>
         {isManager && <Badge color="refletor" variant="light">manager</Badge>}

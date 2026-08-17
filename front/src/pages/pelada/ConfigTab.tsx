@@ -23,6 +23,7 @@ export function ConfigTab({ detail }: Props) {
       playersPerTeam: p.playersPerTeam,
       gameWeekday: String(p.gameWeekday),
       gameTime: p.gameTime,
+      gameDuration: p.gameDuration,
       confirmOpenWeekday: String(p.confirmOpenWeekday),
       confirmOpenTime: p.confirmOpenTime,
       confirmCloseWeekday: String(p.confirmCloseWeekday),
@@ -65,6 +66,7 @@ export function ConfigTab({ detail }: Props) {
           <Group grow>
             <Select label="Dia do jogo" data={weekdayData} {...form.getInputProps("gameWeekday")} />
             <TextInput label="Hora do jogo" type="time" {...form.getInputProps("gameTime")} />
+            <NumberInput label="Duração (min)" min={15} max={480} step={15} {...form.getInputProps("gameDuration")} />
           </Group>
           <Group grow>
             <Select label="Botão abre (dia)" data={weekdayData} {...form.getInputProps("confirmOpenWeekday")} />

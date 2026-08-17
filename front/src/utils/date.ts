@@ -35,3 +35,13 @@ export function fmtCountdown(ms: number) {
 export function fmtShort(iso: string | Date) {
   return dayjs(iso).format("ddd DD/MM · HH:mm");
 }
+
+/** Horário de término: "20:30" + duração em minutos → "22:30". */
+export function fmtEndTime(startTime: string, durationMinutes: number) {
+  const [h, m] = startTime.split(":").map(Number);
+  return dayjs()
+    .hour(h)
+    .minute(m)
+    .add(durationMinutes, "minute")
+    .format("HH:mm");
+}
