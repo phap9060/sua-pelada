@@ -9,6 +9,7 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "grant-manager": "bun src/scripts/grant-manager.ts",
+    "fix:game-tz": "bun src/scripts/fix-game-tz.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

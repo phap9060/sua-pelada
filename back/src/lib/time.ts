@@ -1,25 +1,44 @@
-// Utilitários de tempo para recorrência semanal (horário local do servidor).
+// Utilitários de tempo para recorrência semanal.
+// A pelada vive no fuso de São Paulo (UTC-3, sem horário de verão desde 2019).
+// Os cálculos são feitos no relógio local do Brasil independente do TZ do servidor,
+// para que "20:30" da config seja 20:30 para os jogadores — e não 20:30 UTC.
+
+const BRAZIL_OFFSET_MIN = -3 * 60; // America/Sao_Paulo
+
+/** Componentes do relógio local de São Paulo de um instante (ler com getUTC*). */
+function brazilLocal(d: Date) {
+  return new Date(d.getTime() + BRAZIL_OFFSET_MIN * 60_000);
+}
+
+/** Constrói o instante UTC de um horário local de São Paulo. */
+function fromBrazilLocal(y: number, mo: number, day: number, h: number, m: number) {
+  return new Date(Date.UTC(y, mo, day, h, m) - BRAZIL_OFFSET_MIN * 60_000);
+}
 
 /** Próxima ocorrência de um dia da semana (0=domingo) + "HH:mm" estritamente após `from`. */
 export function nextOccurrence(weekday: number, time: string, from: Date): Date {
   const [hh, mm] = time.split(":").map(Number);
-  const d = new Date(from);
-  d.setHours(hh, mm, 0, 0);
-  let diff = (weekday - d.getDay() + 7) % 7;
-  d.setDate(d.getDate() + diff);
-  if (d.getTime() <= from.getTime()) d.setDate(d.getDate() + 7);
-  return d;
+  const fl = brazilLocal(from);
+  const year = fl.getUTCFullYear();
+  const month = fl.getUTCMonth();
+  const day = fl.getUTCDate();
+  const diff = (weekday - fl.getUTCDay() + 7) % 7;
+  const target = fromBrazilLocal(year, month, day + diff, hh, mm);
+  if (target.getTime() <= from.getTime()) return fromBrazilLocal(year, month, day + diff + 7, hh, mm);
+  return target;
 }
 
 /** Ocorrência mais recente de um dia da semana + "HH:mm" em ou antes de `ref`. */
 export function lastOccurrence(weekday: number, time: string, ref: Date): Date {
   const [hh, mm] = time.split(":").map(Number);
-  const d = new Date(ref);
-  d.setHours(hh, mm, 0, 0);
-  let diff = (d.getDay() - weekday + 7) % 7;
-  d.setDate(d.getDate() - diff);
-  if (d.getTime() > ref.getTime()) d.setDate(d.getDate() - 7);
-  return d;
+  const fl = brazilLocal(ref);
+  const year = fl.getUTCFullYear();
+  const month = fl.getUTCMonth();
+  const day = fl.getUTCDate();
+  const diff = (fl.getUTCDay() - weekday + 7) % 7;
+  const target = fromBrazilLocal(year, month, day - diff, hh, mm);
+  if (target.getTime() > ref.getTime()) return fromBrazilLocal(year, month, day - diff - 7, hh, mm);
+  return target;
 }
 
 export interface PeladaSchedule {
