@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useMemo, type ReactNode } from 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 import { authService } from "../services/auth";
-import { ME_KEY } from "../lib/queryKeys";
+import { ALL_GAMES_KEY, ALL_PELADAS_KEY, ME_KEY } from "../lib/queryKeys";
 import type { PlayerPosition, User } from "../types";
 
 interface AuthState {
@@ -68,6 +68,22 @@ export function useUpdatePosition() {
         message: updated.position === "keeper" ? "Você agora joga como goleiro" : "Você agora joga na linha",
         color: "grass",
       });
+    },
+  });
+}
+
+/** Atualiza nome, posição e/ou nota pessoal no perfil. */
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name?: string; position?: PlayerPosition; selfRating?: number }) =>
+      authService.updateProfile(body),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<User | null>(ME_KEY, (current) => (current ? { ...current, ...updated } : current));
+      // nota pessoal entra na média dos sorteios -> recarrega peladas e jogos
+      queryClient.invalidateQueries({ queryKey: ALL_PELADAS_KEY });
+      queryClient.invalidateQueries({ queryKey: ALL_GAMES_KEY });
+      notifications.show({ title: "Perfil atualizado", message: "Seus dados foram salvos.", color: "grass" });
     },
   });
 }

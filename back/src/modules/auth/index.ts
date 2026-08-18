@@ -1,9 +1,9 @@
 import { Elysia, t } from "elysia";
 import { jwt } from "@elysiajs/jwt";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "../../db";
 
-const { users } = schema;
+const { users, ratings } = schema;
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret-troque-em-producao";
 const isProd = process.env.NODE_ENV === "production";
@@ -31,7 +31,18 @@ const credentials = t.Object({
 const position = t.Union([t.Literal("line"), t.Literal("keeper")]);
 
 function publicUser(u: typeof users.$inferSelect) {
-  return { id: u.id, name: u.name, email: u.email, canManage: u.canManage, position: u.position };
+  return { id: u.id, name: u.name, email: u.email, canManage: u.canManage, position: u.position, selfRating: null };
+}
+
+/** Última autoavaliação do usuário (nota pessoal), se existir. */
+async function latestSelfRating(userId: string): Promise<number | null> {
+  const [self] = await db
+    .select({ stars: ratings.stars })
+    .from(ratings)
+    .where(and(eq(ratings.raterId, userId), eq(ratings.rateeId, userId)))
+    .orderBy(desc(ratings.createdAt))
+    .limit(1);
+  return self ? self.stars : null;
 }
 
 export const authModule = new Elysia({ prefix: "/auth" })
@@ -90,7 +101,7 @@ export const authModule = new Elysia({ prefix: "/auth" })
     return { ok: true };
   })
   .use(authed)
-  .get("/me", ({ user }) => publicUser(user))
+  .get("/me", async ({ user }) => ({ ...publicUser(user), selfRating: await latestSelfRating(user.id) }))
   // usuário troca a própria posição (linha/goleiro); não zera as notas
   .patch(
     "/position",
@@ -99,4 +110,29 @@ export const authModule = new Elysia({ prefix: "/auth" })
       return publicUser(updated);
     },
     { body: t.Object({ position }) }
+  )
+  // perfil: nome, posição e nota pessoal (autoavaliação vale para todas as peladas)
+  .patch(
+    "/profile",
+    async ({ body, user }) => {
+      const [updated] = await db
+        .update(users)
+        .set({ name: body.name, position: body.position })
+        .where(eq(users.id, user.id))
+        .returning();
+      if (body.selfRating != null) {
+        await db
+          .update(ratings)
+          .set({ stars: body.selfRating })
+          .where(and(eq(ratings.raterId, user.id), eq(ratings.rateeId, user.id)));
+      }
+      return { ...publicUser(updated), selfRating: await latestSelfRating(user.id) };
+    },
+    {
+      body: t.Object({
+        name: t.Optional(t.String({ minLength: 2, maxLength: 80 })),
+        position: t.Optional(position),
+        selfRating: t.Optional(t.Integer({ minimum: 1, maximum: 5 })),
+      }),
+    }
   );

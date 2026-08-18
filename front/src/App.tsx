@@ -21,6 +21,7 @@ const InvitePage = lazyPage(() => import("./pages/InvitePage"));
 const PeladaDetail = lazyPage(() => import("./pages/pelada/PeladaDetail"));
 const RatingsPage = lazyPage(() => import("./pages/RatingsPage"));
 const NotificationsPage = lazyPage(() => import("./pages/NotificationsPage"));
+const ProfilePage = lazyPage(() => import("./pages/ProfilePage"));
 
 const withSuspense = (node: React.ReactNode) => <Suspense fallback={<Loading />}>{node}</Suspense>;
 
@@ -32,6 +33,7 @@ export function App() {
       <Route path="/invite/:token" element={withSuspense(<InvitePage />)} />
       <Route element={<Layout />}>
         <Route path="/" element={withSuspense(<Home />)} />
+        <Route path="/perfil" element={withSuspense(<ProfilePage />)} />
         <Route path="/peladas/new" element={withSuspense(<CreatePelada />)} />
         <Route path="/peladas/:id" element={withSuspense(<PeladaDetail />)} />
         <Route path="/avaliacoes" element={withSuspense(<RatingsPage />)} />

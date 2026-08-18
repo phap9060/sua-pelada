@@ -22,7 +22,7 @@
 
 /* sidebar: mural do clube com divisórias de giz e item ativo marcado como linha de campo */
 .mantine-AppShell-navbar {
-  background: rgba(61, 43, 31, 0.28);
+  background: #241a12;
 }
 .mantine-NavLink-root {
   border-bottom: 1px solid rgba(242, 247, 243, 0.06);

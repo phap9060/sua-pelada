@@ -2,13 +2,13 @@ import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AppShell, Badge, Burger, Button, Container, Group, NavLink, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconBallFootball, IconBell, IconHome, IconLogout, IconStar } from "@tabler/icons-react";
+import { IconBallFootball, IconBell, IconHome, IconLogout, IconStar, IconUser } from "@tabler/icons-react";
 import { useAuth } from "../hooks/useAuth";
 import { useNotifications } from "../hooks/useNotifications";
 import { usePendingRatings } from "../hooks/useRatings";
 
 export function Layout() {
-  const [opened, { toggle }] = useDisclosure();
+  const [opened, { toggle, close }] = useDisclosure();
   const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,6 +37,7 @@ export function Layout() {
       label={label}
       leftSection={icon}
       active={path === to}
+      onClick={close}
       rightSection={
         badge != null && badge > 0 ? (
           <Badge color="red" size="xs" circle>
@@ -84,6 +85,7 @@ export function Layout() {
 
       <AppShell.Navbar p="sm">
         {navLink("/", "Início", <IconHome size={18} />)}
+        {navLink("/perfil", "Perfil", <IconUser size={18} />)}
         {navLink("/avaliacoes", "Avaliações", <IconStar size={18} />, pending)}
         {navLink("/notificacoes", "Notificações", <IconBell size={18} />, unread)}
         <AppShell.Section mt="auto">
