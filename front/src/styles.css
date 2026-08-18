@@ -20,9 +20,9 @@
   border-color: rgba(242, 247, 243, 0.12);
 }
 
-/* sidebar: mural do clube com divisórias de giz e item ativo marcado como linha de campo */
+/* sidebar: gramado à noite, mesma família do header — divisórias de giz e item ativo como linha de campo */
 .mantine-AppShell-navbar {
-  background: #241a12;
+  background: var(--mantine-color-dark-7);
 }
 .mantine-NavLink-root {
   border-bottom: 1px solid rgba(242, 247, 243, 0.06);
