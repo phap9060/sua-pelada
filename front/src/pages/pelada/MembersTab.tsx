@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button, Card, CopyButton, Group, Modal, Stack, Text, Title } from "@mantine/core";
+import { Badge, Button, Card, CopyButton, Group, Menu, Modal, Stack, Text, Title, ActionIcon } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconCheck, IconCopy } from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconDots, IconShieldCheck, IconUserMinus } from "@tabler/icons-react";
 import { useAppointAssistant, useRemoveAssistant, useTriggerRatingRound } from "../../hooks/usePelada";
 import { BallRating } from "../../components/BallRating";
 import { PlayerRow } from "../../components/ui/PlayerRow";
@@ -50,27 +50,37 @@ export function MembersTab({ detail }: Props) {
                 position={m.position}
                 trailing={
                   <Group gap="xs" wrap="nowrap">
-                    {isManager && m.role === "member" && (
-                      <Button
-                        size="compact-xs"
-                        variant="light"
-                        disabled={atLimit || appoint.isPending}
-                        onClick={() => appoint.mutate(m.userId)}
-                        title={atLimit ? `Limite de ${MAX_ASSISTANTS} auxiliares` : "Nomear auxiliar"}
-                      >
-                        Auxiliar
-                      </Button>
-                    )}
-                    {isManager && m.role === "assistant" && (
-                      <Button
-                        size="compact-xs"
-                        variant="light"
-                        color="red"
-                        disabled={remove.isPending}
-                        onClick={() => remove.mutate(m.userId)}
-                      >
-                        Remover cargo
-                      </Button>
+                    {isManager && (
+                      <Menu position="bottom-end" withArrow>
+                        <Menu.Target>
+                          <ActionIcon variant="subtle" color="gray" size="sm" aria-label={`Ações para ${m.name}`}>
+                            <IconDots size={16} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          {m.role === "assistant" ? (
+                            <>
+                              <Menu.Label>Cargo: auxiliar</Menu.Label>
+                              <Menu.Item
+                                color="red"
+                                leftSection={<IconUserMinus size={15} />}
+                                disabled={remove.isPending}
+                                onClick={() => remove.mutate(m.userId)}
+                              >
+                                Remover cargo
+                              </Menu.Item>
+                            </>
+                          ) : (
+                            <Menu.Item
+                              leftSection={<IconShieldCheck size={15} />}
+                              disabled={atLimit || appoint.isPending}
+                              onClick={() => appoint.mutate(m.userId)}
+                            >
+                              {atLimit ? "Limite de 3 auxiliares atingido" : "Nomear auxiliar"}
+                            </Menu.Item>
+                          )}
+                        </Menu.Dropdown>
+                      </Menu>
                     )}
                     <Group gap={6} wrap="nowrap" w={86} justify="flex-end">
                       <BallRating value={m.avgRating} readOnly size={16} fractions={2} position={m.position} />
@@ -82,14 +92,14 @@ export function MembersTab({ detail }: Props) {
                 }
               >
                 {m.role === "manager" && (
-                  <Text size="xs" fw={700} tt="uppercase" c="refletor.4" style={{ letterSpacing: "0.06em" }}>
+                  <Badge color="refletor" variant="light" size="xs">
                     manager
-                  </Text>
+                  </Badge>
                 )}
                 {m.role === "assistant" && (
-                  <Text size="xs" fw={700} tt="uppercase" c="grass.4" style={{ letterSpacing: "0.06em" }}>
+                  <Badge color="grass" variant="light" size="xs">
                     auxiliar
-                  </Text>
+                  </Badge>
                 )}
               </PlayerRow>
             ))}
