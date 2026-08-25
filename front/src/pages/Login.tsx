@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Anchor, Button, Center, Container, Group, Paper, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
-import { IconBallFootball } from "@tabler/icons-react";
+import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { authService } from "../services/auth";
 import { useAuth } from "../hooks/useAuth";
 import { ErrorBox } from "../components/ui/ErrorBox";
+import { AuthShell } from "../components/AuthShell";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -27,48 +27,42 @@ export function Login() {
   };
 
   return (
-    <div className="pitch-bg" style={{ minHeight: "100vh" }}>
-      <Center style={{ minHeight: "100vh" }}>
-        <Container size={420}>
-          <Paper radius="lg" p="xl" withBorder shadow="md">
-            <Stack gap="md">
-              <Group justify="center" gap="sm">
-                <IconBallFootball size={30} stroke={1.5} style={{ color: "var(--mantine-color-grass-5)" }} />
-                <Title ta="center" order={2}>
-                  SUA PELADA
-                </Title>
-              </Group>
-              {error != null && <ErrorBox error={error} />}
-              <form onSubmit={submit}>
-                <Stack gap="md">
-                  <TextInput
-                    label="E-mail"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                  <PasswordInput
-                    label="Senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <Button type="submit" fullWidth>
-                    Entrar
-                  </Button>
-                </Stack>
-              </form>
-              <Text ta="center" c="dimmed" size="sm">
-                Não tem conta?{" "}
-                <Anchor component={Link} to="/register">
-                  Cadastre-se
-                </Anchor>
-              </Text>
-            </Stack>
-          </Paper>
-        </Container>
-      </Center>
-    </div>
+    <AuthShell>
+      <Title order={1} fz={30} mb={4}>
+        Bem-vindo de volta
+      </Title>
+      <Text c="dimmed" size="sm" mb="lg">
+        Entre para garantir sua vaga no próximo jogo.
+      </Text>
+      {error != null && <ErrorBox error={error} />}
+      <Paper radius="lg" p="xl" withBorder>
+        <form onSubmit={submit}>
+          <Stack gap="md">
+            <TextInput
+              label="E-mail"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <PasswordInput
+              label="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <Button type="submit" fullWidth size="md">
+              Entrar
+            </Button>
+          </Stack>
+        </form>
+      </Paper>
+      <Text ta="center" c="dimmed" size="sm" mt="md">
+        Primeira vez aqui?{" "}
+        <Anchor component={Link} to="/register" fw={600}>
+          Criar conta
+        </Anchor>
+      </Text>
+    </AuthShell>
   );
 }

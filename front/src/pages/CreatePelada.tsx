@@ -1,14 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Box, Button, Card, Group, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconLock } from "@tabler/icons-react";
 import { useCreatePelada } from "../hooks/useCreatePelada";
 import { useAuth } from "../hooks/useAuth";
 import { BallRating } from "../components/BallRating";
+import { WeekdayPicker } from "../components/ui/WeekdayPicker";
 import { ErrorBox } from "../components/ui/ErrorBox";
 import { WEEKDAYS } from "../utils/date";
-
-const weekdayData = WEEKDAYS.map((w, i) => ({ value: String(i), label: w }));
 
 export function CreatePelada() {
   const navigate = useNavigate();
@@ -23,12 +22,12 @@ export function CreatePelada() {
       listCapacity: 18,
       keeperCapacity: 3,
       playersPerTeam: 5,
-      gameWeekday: "2",
+      gameWeekday: 2,
       gameTime: "19:00",
       gameDuration: 120,
-      confirmOpenWeekday: "2",
+      confirmOpenWeekday: 2,
       confirmOpenTime: "08:00",
-      confirmCloseWeekday: "2",
+      confirmCloseWeekday: 2,
       confirmCloseTime: "18:00",
     },
     validate: {
@@ -46,19 +45,18 @@ export function CreatePelada() {
         listCapacity: Number(values.listCapacity),
         keeperCapacity: Number(values.keeperCapacity),
         playersPerTeam: Number(values.playersPerTeam),
-        gameWeekday: Number(values.gameWeekday),
-        confirmOpenWeekday: Number(values.confirmOpenWeekday),
-        confirmCloseWeekday: Number(values.confirmCloseWeekday),
       },
       { onSuccess: (pelada) => navigate(`/peladas/${pelada.id}`) }
     );
   });
 
-  return (
-    <Card shadow="sm" padding="lg" radius="lg" withBorder maw={640} mx="auto">
-      {!canManage ? (
+  const v = form.values;
+
+  if (!canManage) {
+    return (
+      <Card shadow="sm" padding="xl" radius="lg" withBorder maw={640} mx="auto">
         <Stack align="center" gap="sm" py="lg">
-          <IconLock size={40} style={{ color: "var(--mantine-color-dimmed)" }} />
+          <IconLock size={40} style={{ color: "var(--sp-chalk-dim)" }} />
           <Title order={3} ta="center">
             Acesso restrito
           </Title>
@@ -66,57 +64,108 @@ export function CreatePelada() {
             Você não tem permissão para gerenciar uma pelada.
           </Text>
         </Stack>
-      ) : (
-        <>
-          <Title order={2} mb="md">
-            Criar minha pelada
-          </Title>
-          {create.isError && <ErrorBox error={create.error} />}
-          <form onSubmit={submit}>
-            <Stack gap="md">
-              <TextInput label="Nome da pelada" {...form.getInputProps("name")} maxLength={80} />
+      </Card>
+    );
+  }
 
+  return (
+    <Stack gap="md" maw={640} mx="auto">
+      <div>
+        <Title order={1} fz={28}>
+          Criar minha pelada
+        </Title>
+        <Text c="dimmed" size="sm">
+          Configure o dia, a vaga e a janela de confirmação. O resto a gente organiza.
+        </Text>
+      </div>
+
+      {/* resumo vivo */}
+      <Card shadow="sm" padding="md" radius="lg" withBorder>
+        <Text size="sm" className="digits" fz={17}>
+          Toda {WEEKDAYS[v.gameWeekday].toLowerCase()} às {v.gameTime} · {v.playersPerTeam} por time ·{" "}
+          {v.listCapacity} vagas de linha + {v.keeperCapacity} goleiros
+        </Text>
+        <Text c="dimmed" size="xs" mt={2}>
+          Confirmação abre {WEEKDAYS[v.confirmOpenWeekday].toLowerCase()} às {v.confirmOpenTime} e fecha{" "}
+          {WEEKDAYS[v.confirmCloseWeekday].toLowerCase()} às {v.confirmCloseTime}
+        </Text>
+      </Card>
+
+      <Card shadow="sm" padding="lg" radius="lg" withBorder>
+        {create.isError && <ErrorBox error={create.error} />}
+        <form onSubmit={submit}>
+          <Stack gap="xl">
+            <Stack gap="md">
               <div>
-                <Text size="sm" c="dimmed" mb={6}>
-                  Sua autoavaliação (nota inicial)
+                <Text size="sm" fw={500} mb={6}>
+                  Nome da pelada
                 </Text>
-                <BallRating value={form.values.selfRating} onChange={(v) => form.setFieldValue("selfRating", v)} size={36} />
+                <TextInput placeholder="Ex.: Terça dos Cracks" {...form.getInputProps("name")} maxLength={80} />
               </div>
 
+              <div>
+                <Text size="sm" fw={500} mb={6}>
+                  Sua autoavaliação (nota inicial)
+                </Text>
+                <BallRating value={v.selfRating} onChange={(x) => form.setFieldValue("selfRating", x)} size={36} />
+              </div>
+            </Stack>
+
+            <hr className="chalk-rule" />
+
+            <Stack gap="md">
+              <Text className="eyebrow">Vagas</Text>
               <Group grow>
-                <NumberInput label="Vagas de linha (titulares)" min={2} max={50} {...form.getInputProps("listCapacity")} />
-                <NumberInput label="Vagas de goleiro" min={0} max={50} {...form.getInputProps("keeperCapacity")} />
+                <NumberInput label="Linha" min={2} max={50} {...form.getInputProps("listCapacity")} />
+                <NumberInput label="Goleiros" min={0} max={50} {...form.getInputProps("keeperCapacity")} />
               </Group>
               <NumberInput label="Jogadores por time" min={2} max={15} maw={200} {...form.getInputProps("playersPerTeam")} />
+            </Stack>
 
-              <Title order={4}>Jogo semanal</Title>
+            <hr className="chalk-rule" />
+
+            <Stack gap="md">
+              <Text className="eyebrow">Dia do jogo</Text>
+              <WeekdayPicker value={v.gameWeekday} onChange={(x) => form.setFieldValue("gameWeekday", x)} />
               <Group grow>
-                <Select label="Dia do jogo" data={weekdayData} {...form.getInputProps("gameWeekday")} />
                 <TextInput label="Horário" type="time" {...form.getInputProps("gameTime")} />
                 <NumberInput label="Duração (min)" min={15} max={480} step={15} {...form.getInputProps("gameDuration")} />
               </Group>
+            </Stack>
 
-              <Title order={4}>Confirmação de presença</Title>
-              <Group grow>
-                <Select label="Botão abre (dia)" data={weekdayData} {...form.getInputProps("confirmOpenWeekday")} />
-                <TextInput label="Hora" type="time" {...form.getInputProps("confirmOpenTime")} />
-              </Group>
-              <Group grow>
-                <Select label="Botão fecha (dia)" data={weekdayData} {...form.getInputProps("confirmCloseWeekday")} />
-                <TextInput label="Hora" type="time" {...form.getInputProps("confirmCloseTime")} />
-              </Group>
+            <hr className="chalk-rule" />
 
+            <Stack gap="md">
+              <Text className="eyebrow">Confirmação de presença</Text>
+              <div>
+                <Text size="sm" c="dimmed" mb={6}>
+                  Abre
+                </Text>
+                <WeekdayPicker value={v.confirmOpenWeekday} onChange={(x) => form.setFieldValue("confirmOpenWeekday", x)} />
+                <Box mt={6}>
+                  <TextInput label="Hora" type="time" {...form.getInputProps("confirmOpenTime")} />
+                </Box>
+              </div>
+              <div>
+                <Text size="sm" c="dimmed" mb={6}>
+                  Fecha
+                </Text>
+                <WeekdayPicker value={v.confirmCloseWeekday} onChange={(x) => form.setFieldValue("confirmCloseWeekday", x)} />
+                <Box mt={6}>
+                  <TextInput label="Hora" type="time" {...form.getInputProps("confirmCloseTime")} />
+                </Box>
+              </div>
               <Text c="dimmed" size="sm">
                 No fechamento, o sorteio balanceado dos times acontece automaticamente.
               </Text>
-
-              <Button type="submit" fullWidth loading={create.isPending}>
-                Criar pelada
-              </Button>
             </Stack>
-          </form>
-        </>
-      )}
-    </Card>
+
+            <Button type="submit" fullWidth size="md" loading={create.isPending}>
+              Criar pelada
+            </Button>
+          </Stack>
+        </form>
+      </Card>
+    </Stack>
   );
 }

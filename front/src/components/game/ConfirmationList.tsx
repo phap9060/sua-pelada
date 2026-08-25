@@ -1,6 +1,6 @@
-import { Badge, Button, Card, Group, Stack, Text } from "@mantine/core";
+import { Button, Card, Group, Stack, Text } from "@mantine/core";
 import { IconBrandWhatsapp } from "@tabler/icons-react";
-import { GloveIcon } from "../GloveIcon";
+import { PlayerRow } from "../ui/PlayerRow";
 import { fmtTimeWithSeconds } from "../../utils/date";
 import { buildWhatsAppListMessage, whatsappShareUrl } from "../../utils/share";
 import type { GamePayload } from "../../types";
@@ -19,65 +19,54 @@ interface Row {
   pos: number;
 }
 
-function RowItem({ row, kind }: { row: Row; kind: "titular" | "suplente" }) {
-  return (
-    <Group justify="space-between" px="xs" py={6} bg={kind === "titular" ? "rgba(34,197,94,0.07)" : undefined} style={{ borderRadius: 8 }}>
-      <Group gap="sm">
-        <span className="shirt-num">{row.pos}º</span>
-        <Text>{row.name}</Text>
-        {row.position === "keeper" && (
-          <Badge color="refletor" variant="light" size="xs" leftSection={<GloveIcon size={12} />}>
-            goleiro
-          </Badge>
-        )}
-        <Text c="dimmed" size="xs" className="digits">
-          às {fmtTimeWithSeconds(row.confirmedAt)}
-        </Text>
-      </Group>
-      <Badge color={kind === "titular" ? "grass" : "gray"} variant="light">
-        {kind}
-      </Badge>
-    </Group>
-  );
-}
-
-function Section({
-  title,
-  count,
-  capacity,
-  rows,
-}: {
+interface SectionProps {
   title: string;
   count: number;
   capacity: number;
   rows: { titulares: Row[]; suplentes: Row[] };
-}) {
+}
+
+function Section({ title, count, capacity, rows }: SectionProps) {
+  const all = [...rows.titulares.map((r) => ({ ...r, titular: true })), ...rows.suplentes.map((r) => ({ ...r, titular: false }))];
   return (
-    <>
-      <Group justify="space-between" mb={4}>
-        <Text fw={700} size="sm" style={{ textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          {title}
-        </Text>
-        <Text className="digits" size="sm" c="grass.4">
+    <div>
+      <Group justify="space-between" mb={4} px="xs">
+        <Text className="eyebrow">{title}</Text>
+        <Text className="digits" size="sm" c={count >= capacity ? "grass.4" : "dimmed"}>
           {count}/{capacity}
         </Text>
       </Group>
-      {rows.titulares.length === 0 && rows.suplentes.length === 0 && (
-        <Text c="dimmed" size="sm" py={4}>
+      {all.length === 0 ? (
+        <Text c="dimmed" size="sm" py={4} px="xs">
           Ninguém confirmou ainda.
         </Text>
+      ) : (
+        <Stack gap={0}>
+          {all.map((r) => (
+            <PlayerRow
+              key={r.userId}
+              name={r.name}
+              position={r.position}
+              order={`${r.pos}º`}
+              trailing={
+                <Group gap={8} wrap="nowrap">
+                  <Text c="dimmed" size="xs" className="digits">
+                    {fmtTimeWithSeconds(r.confirmedAt)}
+                  </Text>
+                  <Text size="xs" fw={700} tt="uppercase" style={{ letterSpacing: "0.06em" }} c={r.titular ? "grass.4" : "dimmed"}>
+                    {r.titular ? "titular" : "suplente"}
+                  </Text>
+                </Group>
+              }
+            />
+          ))}
+        </Stack>
       )}
-      {rows.titulares.map((r) => (
-        <RowItem key={r.userId} row={r} kind="titular" />
-      ))}
-      {rows.suplentes.map((r) => (
-        <RowItem key={r.userId} row={r} kind="suplente" />
-      ))}
-    </>
+    </div>
   );
 }
 
-/** Lista de confirmados em duas cotas: linha e goleiros, cada uma com sua fila. */
+/** Lista de confirmados em duas cotas: linha e goleiros. */
 export function ConfirmationList({ game, peladaId, peladaName }: Props) {
   const lineCount = game.line.titulares.length + game.line.suplentes.length;
   const keeperCount = game.keepers.titulares.length + game.keepers.suplentes.length;
@@ -90,33 +79,29 @@ export function ConfirmationList({ game, peladaId, peladaName }: Props) {
 
   return (
     <Card shadow="sm" padding="lg" radius="lg" withBorder>
-      <Group justify="space-between" mb="sm">
+      <Group justify="space-between" mb="md">
         <Text fw={700} size="lg">
-          Lista ({total})
+          Lista de presença
         </Text>
         <Button
           variant="light"
           color="grass"
-          size="xs"
-          leftSection={<IconBrandWhatsapp size={16} />}
+          size="compact-sm"
+          leftSection={<IconBrandWhatsapp size={15} />}
           onClick={shareWhatsApp}
           disabled={total === 0}
         >
-          Compartilhar no WhatsApp
+          WhatsApp
         </Button>
       </Group>
-      {total === 0 && (
-        <Text c="dimmed" ta="center" py="md">
-          Ninguém confirmou ainda — garanta a primeira vaga.
-        </Text>
-      )}
-      <Stack gap="sm">
+      <Stack gap="lg">
         <Section
           title="Linha"
           count={lineCount}
           capacity={game.listCapacity}
           rows={{ titulares: game.line.titulares, suplentes: game.line.suplentes }}
         />
+        <hr className="chalk-rule" />
         <Section
           title="Goleiros"
           count={keeperCount}

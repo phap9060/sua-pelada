@@ -1,37 +1,189 @@
-/* Fundo de gramado: listras sutis alternando tons de verde + brilho no topo. */
+/* ============================================================
+   NOITE DE JOGO — gramado noturno, linhas de giz, refletores
+   ============================================================ */
+
+:root {
+  /* superfícies */
+  --sp-pitch-0: #0a140d;      /* fundo base */
+  --sp-pitch-1: #0d1a11;      /* faixa de rolagem alternada */
+  --sp-surface: #16281c;      /* card */
+  --sp-surface-2: #1c3224;    /* card hover / trechos elevados */
+
+  /* giz (traço de campo) */
+  --sp-chalk: #e8f2ea;
+  --sp-chalk-dim: rgba(232, 242, 234, 0.6);
+  --sp-chalk-faint: rgba(232, 242, 234, 0.12);
+  --sp-chalk-line: rgba(232, 242, 234, 0.07);
+
+  /* cores de papel */
+  --sp-grass: #3acb62;
+  --sp-flood: #ffb020;        /* refletor: só campeões */
+  --sp-red: #e23b2e;          /* botão físico: só presença */
+
+  --sp-font-display: "Bungee", system-ui, sans-serif;
+  --sp-font-digits: "Barlow Condensed", sans-serif;
+}
+
+body {
+  background: var(--sp-pitch-0);
+  color: var(--sp-chalk);
+}
+
+/* ---- Gramado: listras de corte + brilho de refletor no topo ---- */
 .pitch-bg {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.10), transparent 55%),
-    repeating-linear-gradient(90deg, #102015 0px, #102015 110px, #0d1a11 110px, #0d1a11 220px);
+    radial-gradient(120% 55% at 50% -10%, rgba(58, 203, 98, 0.14), transparent 60%),
+    repeating-linear-gradient(90deg,
+      var(--sp-pitch-1) 0px, var(--sp-pitch-1) 128px,
+      var(--sp-pitch-0) 128px, var(--sp-pitch-0) 256px);
   min-height: 100vh;
+  background-attachment: fixed;
 }
 
 /* ---- Tipografia do mundo da pelada ---- */
-/* dígitos de placar: horários, contagens, posições */
+/* placar: todo dígito/horário da interface */
 .digits {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--sp-font-digits);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
 }
 
-/* bordas de giz (linha de campo) nos cards */
-.mantine-Card-root[data-with-border] {
-  border-color: rgba(242, 247, 243, 0.12);
+/* momentos épicos: logo, consagração, placar herói */
+.display {
+  font-family: var(--sp-font-display);
+  font-weight: 400;
+  line-height: 1.15;
 }
 
-/* sidebar: gramado à noite, mesma família do header — divisórias de giz e item ativo como linha de campo */
-.mantine-AppShell-navbar {
-  background: var(--mantine-color-dark-7);
+/* eyebrow rotulador de seção, caixa alta com respiro */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sp-chalk-dim);
 }
-.mantine-NavLink-root {
-  border-bottom: 1px solid rgba(242, 247, 243, 0.06);
-  border-radius: 0;
+
+/* linha de giz tracejada — divisória estrutural */
+.chalk-rule {
+  border: none;
+  border-top: 2px dashed var(--sp-chalk-faint);
+  margin: 0;
 }
-.mantine-NavLink-root[data-active] {
-  border-left: 3px solid var(--mantine-color-grass-6);
-  background: rgba(34, 197, 94, 0.08);
+
+/* ---- Cards: superfície de grama com borda de giz ---- */
+.mantine-Card-root[data-with-border] {
+  border-color: var(--sp-chalk-faint);
+  background:
+    linear-gradient(180deg, rgba(232, 242, 234, 0.02), transparent 40%),
+    var(--sp-surface);
+}
+
+/* painel de marca das telas de entrada — só desktop */
+.sp-brand-panel {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 64px;
+  border-right: 1px solid var(--sp-chalk-faint);
+}
+@media (min-width: 48em) {
+  .sp-brand-panel {
+    display: flex;
+  }
+}
+
+/* ---- Navegação ---- */
+.sp-nav-link {
+  border-radius: 999px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sp-nav-link:hover {
+  background: rgba(232, 242, 234, 0.07);
+  color: var(--sp-chalk) !important;
+}
+.sp-nav-link[data-active]:hover {
+  background: rgba(34, 197, 94, 0.18);
+}
+
+/* barra inferior (mobile): pilar de concreto do estádio */
+.sp-tabbar {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  height: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: linear-gradient(180deg, rgba(13, 26, 17, 0), var(--sp-pitch-1) 30%);
+  border-top: 1px solid var(--sp-chalk-faint);
+}
+.sp-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--sp-chalk-dim);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  position: relative;
+  transition: color 0.15s ease;
+}
+.sp-tab[data-active] {
   color: var(--mantine-color-grass-4);
+}
+.sp-tab[data-active]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 28px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--sp-grass);
+}
+
+/* avatar-inicial de jogador (bolinha de camisa) */
+.player-dot {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-family: var(--sp-font-digits);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--mantine-color-grass-3);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1.5px solid rgba(34, 197, 94, 0.35);
+  user-select: none;
+}
+.player-dot.is-gk {
+  color: var(--mantine-color-refletor-4);
+  background: rgba(255, 176, 32, 0.1);
+  border-color: rgba(255, 176, 32, 0.35);
+}
+
+/* número de camisa nas listas */
+.shirt-num {
+  font-family: var(--sp-font-digits);
+  font-weight: 700;
+  font-size: 1rem;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sp-chalk-faint);
+  border-radius: 8px;
+  color: var(--mantine-color-grass-4);
+  background: rgba(34, 197, 94, 0.06);
 }
 
 /* ---- Botão gigante vermelho de confirmação ---- */
@@ -40,28 +192,32 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 24px 0;
+  padding: 20px 0;
 }
 .big-red {
-  width: 220px;
-  height: 220px;
+  width: 216px;
+  height: 216px;
   padding: 0 !important;
   border: 8px solid #7f1d1d;
   background: radial-gradient(circle at 35% 30%, #ef4444, #b91c1c 70%);
-  box-shadow: 0 10px 0 #7f1d1d, 0 16px 24px rgba(0, 0, 0, 0.5), inset 0 -12px 24px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 10px 0 #7f1d1d,
+    0 18px 28px rgba(0, 0, 0, 0.55),
+    inset 0 -14px 24px rgba(0, 0, 0, 0.3),
+    inset 0 6px 12px rgba(255, 255, 255, 0.25);
   color: #fff;
-  font-family: "Bungee", system-ui, sans-serif;
+  font-family: var(--sp-font-display);
   font-size: 1.05rem;
   line-height: 1.25;
   text-transform: uppercase;
   transition: transform 0.05s, box-shadow 0.05s, filter 0.05s;
 }
 .big-red:focus-visible {
-  outline: 3px solid var(--mantine-color-grass-5);
+  outline: 3px solid var(--sp-grass);
   outline-offset: 4px;
 }
 .big-red:not([data-disabled]):hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
 }
 .big-red:not([data-disabled]):active {
   transform: translateY(8px);
@@ -84,10 +240,10 @@
 }
 @keyframes big-red-pulse {
   0% {
-    box-shadow: 0 10px 0 #7f1d1d, 0 0 0 0 rgba(239, 68, 68, 0.5);
+    box-shadow: 0 10px 0 #7f1d1d, 0 0 0 0 rgba(239, 68, 68, 0.45);
   }
   70% {
-    box-shadow: 0 10px 0 #7f1d1d, 0 0 0 28px rgba(239, 68, 68, 0);
+    box-shadow: 0 10px 0 #7f1d1d, 0 0 0 30px rgba(239, 68, 68, 0);
   }
   100% {
     box-shadow: 0 10px 0 #7f1d1d, 0 0 0 0 rgba(239, 68, 68, 0);
@@ -104,25 +260,146 @@
   100% { transform: scale(1); }
 }
 
-/* número de camisa nas listas (escalação) */
-.shirt-num {
-  font-family: "Barlow Condensed", sans-serif;
-  font-weight: 700;
-  font-size: 1.05rem;
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(242, 247, 243, 0.25);
-  border-radius: 6px;
-  color: var(--mantine-color-grass-4);
-  background: rgba(34, 197, 94, 0.06);
+/* contagem regressiva em destaque quando a janela está aberta */
+.countdown-live {
+  animation: countdown-breathe 2s ease-in-out infinite;
+}
+@keyframes countdown-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
+/* ---- Abas da pelada: pílulas de giz ---- */
+.sp-tabs .mantine-Tabs-tab {
+  font-weight: 600;
+  border-radius: 999px;
+}
+.sp-tabs .mantine-Tabs-tab[data-active] {
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--mantine-color-grass-4);
+}
+
+/* ---- Timeline de matchday: a linha de giz do dia de jogo ---- */
+.sp-tl {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+.sp-tl-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 92px;
+  flex: none;
+  text-align: center;
+}
+.sp-tl-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid var(--sp-chalk-faint);
+  background: var(--sp-surface);
+  position: relative;
+  z-index: 1;
+}
+.sp-tl-node[data-state="done"] .sp-tl-dot {
+  background: var(--sp-chalk-dim);
+  border-color: transparent;
+}
+.sp-tl-node[data-state="active"] .sp-tl-dot {
+  background: var(--sp-grass);
+  border-color: rgba(58, 203, 98, 0.35);
+  box-shadow: 0 0 0 0 rgba(58, 203, 98, 0.5);
+  animation: tl-ping 1.8s ease-out infinite;
+}
+@keyframes tl-ping {
+  0% { box-shadow: 0 0 0 0 rgba(58, 203, 98, 0.45); }
+  75% { box-shadow: 0 0 0 12px rgba(58, 203, 98, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(58, 203, 98, 0); }
+}
+.sp-tl-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sp-chalk-dim);
+  line-height: 1.25;
+}
+.sp-tl-node[data-state="active"] .sp-tl-label {
+  color: var(--mantine-color-grass-4);
+}
+.sp-tl-time {
+  font-family: var(--sp-font-digits);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  color: var(--sp-chalk-dim);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.sp-tl-node[data-state="active"] .sp-tl-time {
+  color: var(--mantine-color-grass-4);
+  font-size: 17px;
+}
+.sp-tl-seg {
+  flex: 1;
+  min-width: 14px;
+  height: 0;
+  margin-top: 7px;
+  border-top: 2px dashed var(--sp-chalk-faint);
+}
+.sp-tl-seg[data-done] {
+  border-top-style: solid;
+  border-top-color: rgba(232, 242, 234, 0.3);
+}
+
+/* ---- Consagração: o único lugar onde o âmbar brilha ---- */
+.champion-glow {
+  border-color: var(--sp-flood) !important;
+  box-shadow: 0 0 18px rgba(255, 176, 32, 0.3), inset 0 0 24px rgba(255, 176, 32, 0.06);
+}
+
+/* ---- Skeletons: shimmer na grama ---- */
+.mantine-Skeleton-root {
+  --skeleton-bg: rgba(232, 242, 234, 0.06);
+  --skeleton-shine: rgba(232, 242, 234, 0.12);
+}
+
+/* entrada de página sutil */
+.page-enter {
+  animation: page-enter 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* fluxo carta-a-carta das avaliações */
+.rating-card-enter {
+  animation: rating-card-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes rating-card-in {
+  from { opacity: 0; transform: translateX(28px) scale(0.98); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* acessibilidade: movimento só se o usuário pedir */
 @media (prefers-reduced-motion: reduce) {
   .big-red.pulse,
-  .big-red.locked {
-    animation: none;
+  .big-red.locked,
+  .countdown-live,
+  .page-enter,
+  .rating-card-enter {
+    animation: none !important;
   }
+  * {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* foco visível em tudo que é interativo */
+:focus-visible {
+  outline: 2px solid var(--sp-grass);
+  outline-offset: 2px;
 }

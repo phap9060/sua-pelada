@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Center, Container, Group, Paper, Stack, Text, Title } from "@mantine/core";
+import { Button, Group, Paper, Stack, Text, Title } from "@mantine/core";
 import { useAuth } from "../hooks/useAuth";
 import { useInvite, useJoinPelada } from "../hooks/useInvite";
 import { BallRating } from "../components/BallRating";
 import { ErrorBox } from "../components/ui/ErrorBox";
 import { Loading } from "../components/ui/Loading";
+import { EmptyState } from "../components/ui/EmptyState";
+import { AuthShell } from "../components/AuthShell";
 
 export function InvitePage() {
   const { token = "" } = useParams();
@@ -26,57 +28,60 @@ export function InvitePage() {
   }, [loading, user, token]);
 
   return (
-    <div className="pitch-bg" style={{ minHeight: "100vh" }}>
-      <Center style={{ minHeight: "100vh" }}>
-        <Container size={440}>
-          <Paper radius="lg" p="xl" withBorder shadow="md">
-            {isLoading && <Loading />}
-            {isError && (
-              <Text ta="center" c="dimmed">
-                Convite inválido ou expirado.
+    <AuthShell>
+      {isLoading && <Loading label="Abrindo o convite…" />}
+      {isError && (
+        <EmptyState title="Convite inválido" hint="Este link não é mais válido. Peça um novo ao manager da pelada." />
+      )}
+      {info && (
+        <Stack gap="md" align="center">
+          <Text className="eyebrow">Convite para a pelada</Text>
+          <Title order={1} ta="center" fz={34}>
+            {info.name}
+          </Title>
+          <Text c="dimmed" size="sm" className="digits" fz="lg">
+            {info.membersCount}/{info.maxMembers} jogadores
+          </Text>
+
+          {!user ? (
+            <>
+              <Text ta="center" c="dimmed" size="sm">
+                Crie sua conta ou entre para aceitar o convite.
               </Text>
-            )}
-            {info && (
-              <Stack gap="md" align="center">
-                <Title order={2} ta="center">
-                  {info.name}
-                </Title>
-                <Text c="dimmed">
-                  {info.membersCount} de {info.maxMembers} jogadores
-                </Text>
-                {!user ? (
-                  <>
-                    <Text ta="center" c="dimmed" size="sm">
-                      Para entrar nesta pelada, crie sua conta ou faça login:
-                    </Text>
-                    <Group>
-                      <Button onClick={() => goToAuth("/register")}>Cadastrar</Button>
-                      <Button variant="light" onClick={() => goToAuth("/login")}>
-                        Entrar
-                      </Button>
-                    </Group>
-                  </>
-                ) : (
-                  <>
-                    <Text ta="center" size="sm">
-                      Antes de entrar, faça sua <b>autoavaliação</b> (será sua nota inicial):
-                    </Text>
-                    <BallRating value={selfRating} onChange={setSelfRating} size={40} position={user.position} />
-                    {join.isError && <ErrorBox error={join.error} />}
-                    <Button
-                      fullWidth
-                      loading={join.isPending}
-                      onClick={() => join.mutate(selfRating, { onSuccess: (p) => navigate(`/peladas/${p.id}`) })}
-                    >
-                      Entrar na pelada
-                    </Button>
-                  </>
-                )}
-              </Stack>
-            )}
+              <Group w="100%" grow>
+                <Button onClick={() => goToAuth("/register")} size="md">
+                  Criar conta
+                </Button>
+                <Button variant="light" onClick={() => goToAuth("/login")} size="md">
+                  Entrar
+                </Button>
+              </Group>
+            </>
+          ) : (
+            <>
+              <Text ta="center" size="sm">
+                Antes de entrar, sua <b>autoavaliação</b> — ela vira sua nota inicial:
+              </Text>
+              <BallRating value={selfRating} onChange={setSelfRating} size={40} position={user.position} />
+              {join.isError && <ErrorBox error={join.error} />}
+              <Button
+                fullWidth
+                size="md"
+                loading={join.isPending}
+                onClick={() => join.mutate(selfRating, { onSuccess: (p) => navigate(`/peladas/${p.id}`) })}
+              >
+                Entrar na pelada
+              </Button>
+            </>
+          )}
+
+          <Paper p="xs" radius="md" withBorder w="100%">
+            <Text size="xs" c="dimmed" ta="center">
+              Você confirma presença semanalmente no botão. Times saem balanceados pelas notas.
+            </Text>
           </Paper>
-        </Container>
-      </Center>
-    </div>
+        </Stack>
+      )}
+    </AuthShell>
   );
 }

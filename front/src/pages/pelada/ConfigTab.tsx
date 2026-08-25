@@ -1,11 +1,10 @@
-import { Button, Card, Group, NumberInput, Select, Stack, TextInput, Title } from "@mantine/core";
+import { Box, Button, Card, Group, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useUpdatePelada } from "../../hooks/usePelada";
+import { WeekdayPicker } from "../../components/ui/WeekdayPicker";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import { WEEKDAYS } from "../../utils/date";
 import type { PeladaDetail } from "../../types";
-
-const weekdayData = WEEKDAYS.map((w, i) => ({ value: String(i), label: w }));
 
 interface Props {
   detail: PeladaDetail;
@@ -21,12 +20,12 @@ export function ConfigTab({ detail }: Props) {
       listCapacity: p.listCapacity,
       keeperCapacity: p.keeperCapacity,
       playersPerTeam: p.playersPerTeam,
-      gameWeekday: String(p.gameWeekday),
+      gameWeekday: p.gameWeekday,
       gameTime: p.gameTime,
       gameDuration: p.gameDuration,
-      confirmOpenWeekday: String(p.confirmOpenWeekday),
+      confirmOpenWeekday: p.confirmOpenWeekday,
       confirmOpenTime: p.confirmOpenTime,
-      confirmCloseWeekday: String(p.confirmCloseWeekday),
+      confirmCloseWeekday: p.confirmCloseWeekday,
       confirmCloseTime: p.confirmCloseTime,
     },
     validate: {
@@ -43,44 +42,85 @@ export function ConfigTab({ detail }: Props) {
       listCapacity: Number(values.listCapacity),
       keeperCapacity: Number(values.keeperCapacity),
       playersPerTeam: Number(values.playersPerTeam),
-      gameWeekday: Number(values.gameWeekday),
-      confirmOpenWeekday: Number(values.confirmOpenWeekday),
-      confirmCloseWeekday: Number(values.confirmCloseWeekday),
     });
   });
 
+  const v = form.values;
+
   return (
-    <Card shadow="sm" padding="lg" radius="lg" withBorder maw={640}>
-      <Title order={3} mb="md">
-        Configurar pelada
-      </Title>
-      {update.isError && <ErrorBox error={update.error} />}
-      <form onSubmit={submit}>
-        <Stack gap="md">
-          <TextInput label="Nome" {...form.getInputProps("name")} maxLength={80} />
-          <Group grow>
-            <NumberInput label="Vagas de linha" min={2} max={50} {...form.getInputProps("listCapacity")} />
-            <NumberInput label="Vagas de goleiro" min={0} max={50} {...form.getInputProps("keeperCapacity")} />
-          </Group>
-          <NumberInput label="Jogadores por time" min={2} max={15} maw={200} {...form.getInputProps("playersPerTeam")} />
-          <Group grow>
-            <Select label="Dia do jogo" data={weekdayData} {...form.getInputProps("gameWeekday")} />
-            <TextInput label="Hora do jogo" type="time" {...form.getInputProps("gameTime")} />
-            <NumberInput label="Duração (min)" min={15} max={480} step={15} {...form.getInputProps("gameDuration")} />
-          </Group>
-          <Group grow>
-            <Select label="Botão abre (dia)" data={weekdayData} {...form.getInputProps("confirmOpenWeekday")} />
-            <TextInput label="Hora" type="time" {...form.getInputProps("confirmOpenTime")} />
-          </Group>
-          <Group grow>
-            <Select label="Botão fecha (dia)" data={weekdayData} {...form.getInputProps("confirmCloseWeekday")} />
-            <TextInput label="Hora" type="time" {...form.getInputProps("confirmCloseTime")} />
-          </Group>
-          <Button type="submit" fullWidth loading={update.isPending}>
-            Salvar
-          </Button>
-        </Stack>
-      </form>
-    </Card>
+    <Stack gap="md" maw={640}>
+      <div>
+        <Title order={3}>Configurar pelada</Title>
+        <Text c="dimmed" size="sm">
+          Tudo aqui vale para as próximas rodadas.
+        </Text>
+      </div>
+
+      <Card shadow="sm" padding="md" radius="lg" withBorder>
+        <Text size="sm" className="digits" fz={17}>
+          Toda {WEEKDAYS[v.gameWeekday].toLowerCase()} às {v.gameTime} · {v.playersPerTeam} por time ·{" "}
+          {v.listCapacity} vagas de linha + {v.keeperCapacity} goleiros
+        </Text>
+        <Text c="dimmed" size="xs" mt={2}>
+          Confirmação abre {WEEKDAYS[v.confirmOpenWeekday].toLowerCase()} às {v.confirmOpenTime} e fecha{" "}
+          {WEEKDAYS[v.confirmCloseWeekday].toLowerCase()} às {v.confirmCloseTime}
+        </Text>
+      </Card>
+
+      <Card shadow="sm" padding="lg" radius="lg" withBorder>
+        {update.isError && <ErrorBox error={update.error} />}
+        <form onSubmit={submit}>
+          <Stack gap="xl">
+            <Stack gap="md">
+              <TextInput label="Nome" {...form.getInputProps("name")} maxLength={80} />
+              <Group grow>
+                <NumberInput label="Vagas de linha" min={2} max={50} {...form.getInputProps("listCapacity")} />
+                <NumberInput label="Vagas de goleiro" min={0} max={50} {...form.getInputProps("keeperCapacity")} />
+              </Group>
+              <NumberInput label="Jogadores por time" min={2} max={15} maw={200} {...form.getInputProps("playersPerTeam")} />
+            </Stack>
+
+            <hr className="chalk-rule" />
+
+            <Stack gap="md">
+              <Text className="eyebrow">Dia do jogo</Text>
+              <WeekdayPicker value={v.gameWeekday} onChange={(x) => form.setFieldValue("gameWeekday", x)} />
+              <Group grow>
+                <TextInput label="Horário" type="time" {...form.getInputProps("gameTime")} />
+                <NumberInput label="Duração (min)" min={15} max={480} step={15} {...form.getInputProps("gameDuration")} />
+              </Group>
+            </Stack>
+
+            <hr className="chalk-rule" />
+
+            <Stack gap="md">
+              <Text className="eyebrow">Confirmação de presença</Text>
+              <div>
+                <Text size="sm" c="dimmed" mb={6}>
+                  Abre
+                </Text>
+                <WeekdayPicker value={v.confirmOpenWeekday} onChange={(x) => form.setFieldValue("confirmOpenWeekday", x)} />
+                <Box mt={6}>
+                  <TextInput label="Hora" type="time" {...form.getInputProps("confirmOpenTime")} />
+                </Box>
+              </div>
+              <div>
+                <Text size="sm" c="dimmed" mb={6}>
+                  Fecha
+                </Text>
+                <WeekdayPicker value={v.confirmCloseWeekday} onChange={(x) => form.setFieldValue("confirmCloseWeekday", x)} />
+                <Box mt={6}>
+                  <TextInput label="Hora" type="time" {...form.getInputProps("confirmCloseTime")} />
+                </Box>
+              </div>
+            </Stack>
+
+            <Button type="submit" fullWidth size="md" loading={update.isPending}>
+              Salvar alterações
+            </Button>
+          </Stack>
+        </form>
+      </Card>
+    </Stack>
   );
 }

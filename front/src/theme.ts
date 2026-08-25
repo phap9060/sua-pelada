@@ -1,6 +1,17 @@
 import { createTheme, type MantineColorsTuple } from "@mantine/core";
 
-/** Verde grama (cor primária) — tons claros lembrando gramado. */
+/**
+ * NOITE DE JOGO — sistema de identidade visual do Sua Pelada.
+ *
+ * Papéis fixos:
+ * - grass    → ação primária, status "aberto", presença confirmada
+ * - pitch    → superfícies (o dark tuple inteiro é o gramado noturno)
+ * - refletor → âmbar de holofote, EXCLUSIVO de campeões/títulos
+ * - terra    → terra de campo seco, detalhes secundários
+ * - botao    → vermelho físico, EXCLUSIVO do botão de presença
+ */
+
+/** Grama viva — verde do gramado sob luz. */
 const grass: MantineColorsTuple = [
   "#eefbf0",
   "#d5f6dd",
@@ -14,21 +25,22 @@ const grass: MantineColorsTuple = [
   "#0e5c2b",
 ];
 
-/** Dark verde-escuro (gramado à noite). */
-const dark: MantineColorsTuple = [
-  "#f0f5f1",
-  "#cfded3",
+/** Pitch — verde-noite profundo. Substitui o dark padrão do Mantine para que
+ *  todo componente escuro nasça com a cor do gramado à noite. */
+const pitch: MantineColorsTuple = [
+  "#edf4ee",
+  "#d0ded3",
   "#a9c2b0",
   "#7fa38a",
   "#5b8668",
-  "#3f6a4e",
-  "#2b5139",
-  "#1d3d2a",
-  "#132b1e",
-  "#0d1f15",
+  "#41694f",
+  "#2f523c",
+  "#223f2e",
+  "#182f22",
+  "#0f2016",
 ];
 
-/** Âmbar de holofote — momentos de ouro (campeões, títulos). */
+/** Âmbar de holofote — momentos de ouro. */
 const refletor: MantineColorsTuple = [
   "#fff8e6",
   "#ffedc2",
@@ -42,7 +54,7 @@ const refletor: MantineColorsTuple = [
   "#5c3d01",
 ];
 
-/** Terra de campo seco — superfícies secundárias. */
+/** Terra de campo seco. */
 const terra: MantineColorsTuple = [
   "#f7f1ea",
   "#e5d8cb",
@@ -58,10 +70,21 @@ const terra: MantineColorsTuple = [
 
 export const theme = createTheme({
   primaryColor: "grass",
-  colors: { grass, dark, refletor, terra },
+  primaryShade: 6,
+  colors: { grass, pitch, refletor, terra },
   defaultRadius: "md",
   autoContrast: true,
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-  // Display: Bungee (lettering de placa de pelada) — com restrição: logo, títulos e botão
-  headings: { fontFamily: "Bungee, system-ui, sans-serif", fontWeight: "400" },
+  fontFamily: "'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  fontFamilyMonospace: "ui-monospace, 'SFMono-Regular', Menlo, monospace",
+  headings: {
+    // Bungee fica restrito a logo/momentos épicos via .display;
+    // títulos de página usam Barlow pesado com aperto de tracking esportivo.
+    fontFamily: "'Barlow', system-ui, sans-serif",
+    fontWeight: "800",
+  },
+  defaultGradient: { from: "grass.6", to: "grass.8", deg: 120 },
+  components: {
+    Card: { defaultProps: { radius: "lg" } },
+    Button: { defaultProps: { radius: "md" } },
+  },
 });

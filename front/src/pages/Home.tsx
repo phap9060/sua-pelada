@@ -1,142 +1,133 @@
 import { Link } from "react-router-dom";
-import { Badge, Button, Card, CopyButton, Group, SegmentedControl, Stack, Text, Title } from "@mantine/core";
-import { IconBallFootball, IconCheck, IconCopy, IconPlus } from "@tabler/icons-react";
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  CopyButton,
+  Group,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import {
+  IconBallFootball,
+  IconCheck,
+  IconCopy,
+  IconPlus,
+} from "@tabler/icons-react";
 import { useMine } from "../hooks/useMine";
-import { useAuth, useUpdatePosition } from "../hooks/useAuth";
-import { GloveIcon } from "../components/GloveIcon";
+import { useAuth } from "../hooks/useAuth";
+import { refsOf, useNextGame } from "../hooks/useNextGame";
+import { GameHero } from "../components/game/GameHero";
+import { EmptyState } from "../components/ui/EmptyState";
 import { ErrorBox } from "../components/ui/ErrorBox";
-import { Loading } from "../components/ui/Loading";
+import { GameHeroSkeleton, CardSkeleton } from "../components/ui/Skeletons";
 import { WEEKDAYS } from "../utils/date";
-import type { PlayerPosition } from "../types";
 
 export function Home() {
   const { user } = useAuth();
   const { data: mine, isLoading, isError, error } = useMine();
-  const updatePosition = useUpdatePosition();
+  const next = useNextGame(mine);
   const canManage = user?.canManage ?? false;
 
-  if (isLoading) return <Loading />;
+  if (isLoading) return <Stack gap="md"><GameHeroSkeleton /><CardSkeleton lines={1} /></Stack>;
   if (isError) return <ErrorBox error={error} />;
-  if (!mine) return <Loading />;
+  if (!mine) return null;
 
-  const inviteUrl = mine.managed ? `${window.location.origin}/invite/${mine.managed.inviteToken}` : "";
+  const peladas = refsOf(mine);
 
   return (
-    <Stack gap="lg">
-      <Card shadow="sm" padding="md" radius="lg" withBorder>
-        <Group justify="space-between" wrap="wrap">
-          <Text fw={600} size="sm">
-            Sua posição
-          </Text>
-          <SegmentedControl
-            size="xs"
-            value={user?.position ?? "line"}
-            onChange={(v) => updatePosition.mutate(v as PlayerPosition)}
-            disabled={updatePosition.isPending}
-            data={[
-              {
-                value: "line",
-                label: (
-                  <Group gap={6} wrap="nowrap">
-                    <IconBallFootball size={14} stroke={1.5} />
-                    <span>Linha</span>
-                  </Group>
-                ),
-              },
-              {
-                value: "keeper",
-                label: (
-                  <Group gap={6} wrap="nowrap">
-                    <GloveIcon size={14} />
-                    <span>Goleiro</span>
-                  </Group>
-                ),
-              },
-            ]}
-          />
-        </Group>
-        <Text size="xs" c="dimmed" mt={6}>
-          Trocar a posição não zera suas notas. A avaliação usa {user?.position === "keeper" ? "luvas (1–5)" : "bolas (1–5)"}.
-        </Text>
-      </Card>
-
-      {canManage && (
-        <>
-          <Title order={2}>Minhas peladas</Title>
-
-          {mine.managed ? (
-            <Card shadow="sm" padding="lg" radius="lg" withBorder>
-              <Stack gap="sm">
-                <Group justify="space-between" wrap="wrap">
-                  <Group gap="xs">
-                    <Text
-                      component={Link}
-                      to={`/peladas/${mine.managed.id}`}
-                      fw={800}
-                      size="xl"
-                      c="grass.4"
-                      style={{ textDecoration: "none" }}
-                    >
-                      {mine.managed.name}
-                    </Text>
-                    <Badge color="grass" variant="light">
-                      você é o manager
-                    </Badge>
-                  </Group>
-                </Group>
-                <Text c="dimmed" size="sm">
-                  Jogo: {WEEKDAYS[mine.managed.gameWeekday]} às {mine.managed.gameTime} · {mine.managed.playersPerTeam} por
-                  time · {mine.managed.listCapacity} vagas
-                </Text>
-                <Group gap="xs" align="center">
-                  <Text size="sm">Link de convite:</Text>
-                  <Text size="sm" fw={600} style={{ wordBreak: "break-all" }} ff="monospace">
-                    {inviteUrl}
-                  </Text>
-                  <CopyButton value={inviteUrl}>
-                    {({ copied, copy }) => (
-                      <Button size="xs" variant="light" onClick={copy} leftSection={copied ? <IconCheck size={14} /> : <IconCopy size={14} />}>
-                        {copied ? "Copiado!" : "Copiar"}
-                      </Button>
-                    )}
-                  </CopyButton>
-                </Group>
-              </Stack>
-            </Card>
-          ) : (
-            <Card shadow="sm" padding="xl" radius="lg" withBorder>
-              <Stack align="center" gap="sm">
-                <Text c="dimmed">Você ainda não gerencia uma pelada.</Text>
-                <Button component={Link} to="/peladas/new" leftSection={<IconPlus size={18} />}>
-                  Criar minha pelada
-                </Button>
-              </Stack>
-            </Card>
-          )}
-        </>
+    <Stack gap="xl">
+      {/* ---- herói: o próximo jogo e o botão ---- */}
+      {next.isLoading && <GameHeroSkeleton />}
+      {next.data && (
+        <GameHero game={next.data.game} peladaId={next.data.pelada.id} peladaName={next.data.pelada.name} />
       )}
-
-      <Title order={3}>Peladas que eu jogo</Title>
-      {mine.memberOf.length === 0 && (
-        <Card shadow="sm" padding="lg" radius="lg" withBorder>
-          <Text c="dimmed" ta="center">
-            Você ainda não entrou em nenhuma pelada. Peça o link de convite ao manager!
-          </Text>
+      {!next.isLoading && !next.data && peladas.length > 0 && (
+        <Card withBorder padding="lg">
+          <EmptyState
+            icon={<IconBallFootball size={34} stroke={1.4} />}
+            title="Sem jogo agendado por enquanto"
+            hint="Aguarde o manager configurar a próxima rodada."
+          />
         </Card>
       )}
+
+      {/* ---- minhas peladas ---- */}
       <Stack gap="sm">
-        {mine.memberOf.map((p) => (
-          <Card key={p.id} shadow="sm" padding="md" radius="lg" withBorder>
-            <Group justify="space-between" wrap="wrap">
-              <Text component={Link} to={`/peladas/${p.id}`} fw={700} c="grass.4" style={{ textDecoration: "none" }}>
-                {p.name}
-              </Text>
-              <Text c="dimmed" size="sm">
-                {WEEKDAYS[p.gameWeekday]} {p.gameTime}
-              </Text>
-            </Group>
+        <Group justify="space-between">
+          <Title order={3} fz="lg">
+            Minhas peladas
+          </Title>
+          {canManage && !mine.managed && (
+            <Button component={Link} to="/peladas/new" variant="light" size="compact-sm" leftSection={<IconPlus size={14} />}>
+              Criar pelada
+            </Button>
+          )}
+        </Group>
+
+        {peladas.length === 0 && (
+          <Card withBorder padding="lg">
+            <EmptyState
+              icon={<IconBallFootball size={34} stroke={1.4} />}
+              title="Você ainda não joga em nenhuma pelada"
+              hint="Peça o link de convite ao manager da sua turma — ou crie a sua."
+              action={
+                canManage ? (
+                  <Button component={Link} to="/peladas/new" leftSection={<IconPlus size={16} />} mt="xs">
+                    Criar minha pelada
+                  </Button>
+                ) : undefined
+              }
+            />
           </Card>
-        ))}
+        )}
+
+        {peladas.map((p) => {
+          const isManaged = mine.managed?.id === p.id;
+          const inviteUrl = `${window.location.origin}/invite/${mine.managed?.inviteToken ?? ""}`;
+          return (
+            <Card key={p.id} withBorder padding="md" component={Link} to={`/peladas/${p.id}`} style={{ textDecoration: "none" }}>
+              <Group justify="space-between" wrap="nowrap">
+                <Box style={{ minWidth: 0 }}>
+                  <Group gap="xs" wrap="nowrap">
+                    <Text fw={700} size="md" truncate>
+                      {p.name}
+                    </Text>
+                    {isManaged && (
+                      <Badge color="refletor" variant="light" size="xs">
+                        manager
+                      </Badge>
+                    )}
+                  </Group>
+                  <Text c="dimmed" size="sm" className="digits">
+                    {WEEKDAYS[p.gameWeekday]} · {p.gameTime}
+                  </Text>
+                </Box>
+                <Group gap="xs" wrap="nowrap">
+                  {isManaged && (
+                    <CopyButton value={inviteUrl}>
+                      {({ copied, copy }) => (
+                        <Button
+                          size="compact-xs"
+                          variant="subtle"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            copy();
+                          }}
+                          leftSection={copied ? <IconCheck size={13} /> : <IconCopy size={13} />}
+                        >
+                          {copied ? "Copiado" : "Convite"}
+                        </Button>
+                      )}
+                    </CopyButton>
+                  )}
+                </Group>
+              </Group>
+            </Card>
+          );
+        })}
       </Stack>
     </Stack>
   );
