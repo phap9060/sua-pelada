@@ -82,9 +82,9 @@ export function MembersTab({ detail }: Props) {
                         </Menu.Dropdown>
                       </Menu>
                     )}
-                    <Group gap={6} wrap="nowrap" w={86} justify="flex-end">
+                    <Group gap="xs" wrap="nowrap" style={{ flex: "none" }}>
                       <BallRating value={m.avgRating} readOnly size={16} fractions={2} position={m.position} />
-                      <Text c="dimmed" size="sm" className="digits" w={28} ta="right">
+                      <Text c="dimmed" size="sm" className="digits" w={26} ta="right">
                         {m.avgRating.toFixed(1)}
                       </Text>
                     </Group>
