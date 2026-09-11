@@ -12,4 +12,6 @@ export const peladasService = {
   stats: (id: string) => unwrap(api.peladas({ id }).stats.get()),
   appointAssistant: (id: string, userId: string) => unwrap(api.peladas({ id }).assistants.post({ userId })),
   removeAssistant: (id: string, userId: string) => unwrap(api.peladas({ id }).assistants({ userId }).delete()),
+  removeMember: (id: string, userId: string) => unwrap(api.peladas({ id }).members({ userId }).delete()),
+  leave: (id: string) => unwrap(api.peladas({ id }).leave.delete()),
 };

@@ -1,12 +1,12 @@
 import { Elysia, t } from "elysia";
-import { and, asc, eq, gt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "../../db";
 import { authed } from "../auth";
 import { averageRatings } from "../../lib/ratings";
 import { notify } from "../../lib/notify";
 import { getPelada, isManagerOrAssistant, isMember, memberIds } from "../../lib/guards";
 
-const { peladas, peladaMembers, peladaAssistants, ratings, ratingRequests, games, users } = schema;
+const { peladas, peladaMembers, peladaAssistants, peladaExits, ratings, ratingRequests, games, gameConfirmations, users } = schema;
 
 const MAX_MEMBERS = 50;
 const MAX_ASSISTANTS = 3;
@@ -59,6 +59,55 @@ function publicPelada(p: typeof peladas.$inferSelect) {
     confirmCloseTime: p.confirmCloseTime,
     ratingRound: p.ratingRound,
   };
+}
+
+/**
+ * Remove um jogador da pelada: registra na lista de desistentes, tira o cargo de
+ * auxiliar (se tiver), apaga associação, notas e pendências de avaliação, e cancela
+ * confirmações dos próximos jogos. O histórico de times já sorteados é preservado
+ * (títulos continuam nas estatísticas).
+ */
+async function removeFromPelada(peladaId: string, target: { userId: string; name: string }) {
+  await db
+    .insert(peladaExits)
+    .values({ peladaId, userId: target.userId, name: target.name })
+    .onConflictDoNothing({ target: [peladaExits.peladaId, peladaExits.userId] });
+  await db
+    .delete(peladaAssistants)
+    .where(and(eq(peladaAssistants.peladaId, peladaId), eq(peladaAssistants.userId, target.userId)));
+  await db
+    .delete(peladaMembers)
+    .where(and(eq(peladaMembers.peladaId, peladaId), eq(peladaMembers.userId, target.userId)));
+  await db
+    .delete(ratings)
+    .where(
+      and(
+        eq(ratings.peladaId, peladaId),
+        or(eq(ratings.raterId, target.userId), eq(ratings.rateeId, target.userId))
+      )
+    );
+  await db
+    .delete(ratingRequests)
+    .where(
+      and(
+        eq(ratingRequests.peladaId, peladaId),
+        or(eq(ratingRequests.raterId, target.userId), eq(ratingRequests.rateeId, target.userId))
+      )
+    );
+  const upcoming = await db
+    .select({ id: games.id })
+    .from(games)
+    .where(and(eq(games.peladaId, peladaId), inArray(games.status, ["scheduled", "open"])));
+  if (upcoming.length > 0) {
+    await db
+      .delete(gameConfirmations)
+      .where(
+        and(
+          inArray(gameConfirmations.gameId, upcoming.map((g) => g.id)),
+          eq(gameConfirmations.userId, target.userId)
+        )
+      );
+  }
 }
 
 export const peladasModule = new Elysia()
@@ -124,6 +173,11 @@ export const peladasModule = new Elysia()
       userId === pelada.managerId ? "manager" : assistantIds.has(userId) ? "assistant" : "member";
 
     const averages = await averageRatings(pelada.id);
+    const exits = await db
+      .select({ userId: peladaExits.userId, name: peladaExits.name, exitedAt: peladaExits.exitedAt })
+      .from(peladaExits)
+      .where(eq(peladaExits.peladaId, pelada.id))
+      .orderBy(desc(peladaExits.exitedAt));
     return {
       pelada: publicPelada(pelada),
       myRole: roleOf(user.id),
@@ -135,6 +189,7 @@ export const peladasModule = new Elysia()
         joinedAt: m.joinedAt,
         avgRating: Math.round((averages.get(m.userId) ?? 3) * 100) / 100,
       })),
+      exits,
     };
   })
 
@@ -196,6 +251,38 @@ export const peladasModule = new Elysia()
     return { ok: true };
   })
 
+  // ---- remoção de membros ----
+
+  // manager ou auxiliar remove um jogador da lista
+  .delete("/peladas/:id/members/:userId", async ({ params, user, status }) => {
+    const pelada = await getPelada(params.id);
+    if (!pelada) return status(404, { message: "Pelada não encontrada" });
+    if (!(await isManagerOrAssistant(pelada.id, user.id)))
+      return status(403, { message: "Apenas o manager ou um auxiliar pode remover membros" });
+    if (params.userId === pelada.managerId) return status(400, { message: "O manager não pode ser removido" });
+    if (params.userId === user.id) return status(400, { message: "Use a opção 'Sair da pelada' para remover a si mesmo" });
+    if (!(await isMember(pelada.id, params.userId))) return status(404, { message: "Este jogador não é membro desta pelada" });
+    const [target] = await db.select({ name: users.name }).from(users).where(eq(users.id, params.userId)).limit(1);
+    await removeFromPelada(pelada.id, { userId: params.userId, name: target?.name ?? "Jogador" });
+    await notify([params.userId], "removed", { peladaId: pelada.id, peladaName: pelada.name });
+    return { ok: true };
+  })
+
+  // o próprio jogador sai da pelada
+  .delete("/peladas/:id/leave", async ({ params, user, status }) => {
+    const pelada = await getPelada(params.id);
+    if (!pelada) return status(404, { message: "Pelada não encontrada" });
+    if (!(await isMember(pelada.id, user.id))) return status(400, { message: "Você não é membro desta pelada" });
+    if (pelada.managerId === user.id) return status(400, { message: "O manager não pode sair da própria pelada" });
+    await removeFromPelada(pelada.id, { userId: user.id, name: user.name });
+    await notify([pelada.managerId], "member_left", {
+      peladaId: pelada.id,
+      peladaName: pelada.name,
+      memberName: user.name,
+    });
+    return { ok: true };
+  })
+
   // ---- convites ----
 
   .post(
@@ -209,6 +296,10 @@ export const peladasModule = new Elysia()
       if (others.length >= MAX_MEMBERS) return status(400, { message: "Pelada cheia (50 membros)" });
 
       await db.insert(peladaMembers).values({ peladaId: pelada.id, userId: user.id });
+      // quem voltou pelo convite some da lista de desistentes
+      await db
+        .delete(peladaExits)
+        .where(and(eq(peladaExits.peladaId, pelada.id), eq(peladaExits.userId, user.id)));
       // autoavaliação = nota inicial
       await db.insert(ratings).values({
         peladaId: pelada.id,

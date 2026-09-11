@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
-import { ALL_GAMES_KEY, ALL_PELADAS_KEY, peladaKey, gameKey } from "../lib/queryKeys";
+import { useNavigate } from "react-router-dom";
+import { ALL_GAMES_KEY, ALL_PELADAS_KEY, MINE_KEY, peladaKey, gameKey } from "../lib/queryKeys";
 import { peladasService } from "../services/peladas";
 import type { UpdatePeladaInput } from "../services/types";
 
@@ -54,6 +55,31 @@ export function useRemoveAssistant(peladaId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: peladaKey(peladaId) });
       notifications.show({ title: "Auxiliar removido", message: "Ele voltou a ser um membro comum.", color: "yellow" });
+    },
+  });
+}
+
+export function useRemoveMember(peladaId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => peladasService.removeMember(peladaId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: peladaKey(peladaId) });
+      notifications.show({ title: "Jogador removido", message: "Ele saiu da lista da pelada.", color: "yellow" });
+    },
+  });
+}
+
+export function useLeavePelada(peladaId: string) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: () => peladasService.leave(peladaId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: peladaKey(peladaId) });
+      queryClient.invalidateQueries({ queryKey: MINE_KEY });
+      notifications.show({ title: "Você saiu da pelada", message: "Suas notas e confirmações foram removidas.", color: "yellow" });
+      navigate("/");
     },
   });
 }
