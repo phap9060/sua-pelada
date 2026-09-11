@@ -8,14 +8,14 @@ interface BallRatingProps {
   onChange?: (v: number) => void;
   size?: number;
   readOnly?: boolean;
-  /** frações de exibição (ex: 2 = meia bola) */
+  /** frações de exibição/escolha (2 = meia bola; é o padrão, inclusive ao clicar) */
   fractions?: number;
   /** posição do AVALIADO: linha = bolas, goleiro = luvas */
   position?: PlayerPosition;
 }
 
-/** Avaliação de 1 a 5: bolas para jogador de linha, luvas para goleiro. */
-export function BallRating({ value, onChange, size = 28, readOnly = false, fractions = 1, position = "line" }: BallRatingProps) {
+/** Avaliação de 1 a 5 em passos de 0,5: bolas para jogador de linha, luvas para goleiro. */
+export function BallRating({ value, onChange, size = 28, readOnly = false, fractions = 2, position = "line" }: BallRatingProps) {
   const symbol = position === "keeper" ? <GloveIcon size={size} /> : <IconBallFootball size={size} stroke={1.5} />;
   const emptySymbol = <span style={{ opacity: 0.28 }}>{symbol}</span>;
   const label = position === "keeper" ? `${value} de 5 luvas` : `${value} de 5 bolas`;

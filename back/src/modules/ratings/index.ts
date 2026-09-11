@@ -3,6 +3,7 @@ import { and, asc, eq, isNull, lt } from "drizzle-orm";
 import { db, schema } from "../../db";
 import { authed } from "../auth";
 import { getPelada, isManagerOrAssistant, memberIds } from "../../lib/guards";
+import { isValidStars } from "../../lib/ratings";
 import { notify } from "../../lib/notify";
 
 const { ratings, ratingRequests, peladas, peladaMembers, users } = schema;
@@ -41,6 +42,7 @@ export const ratingsModule = new Elysia()
         .limit(1);
       if (!request || request.raterId !== user.id) return status(404, { message: "Avaliação não encontrada" });
       if (request.completedAt) return status(409, { message: "Avaliação já enviada" });
+      if (!isValidStars(body.stars)) return status(400, { message: "A nota vai de 1 a 5 em passos de 0,5" });
 
       // nova nota substitui a anterior (mesma pelada + avaliador + avaliado)
       await db
@@ -62,7 +64,7 @@ export const ratingsModule = new Elysia()
         .where(eq(ratingRequests.id, request.id));
       return { ok: true };
     },
-    { body: t.Object({ requestId: t.String(), stars: t.Integer({ minimum: 1, maximum: 5 }) }) }
+    { body: t.Object({ requestId: t.String(), stars: t.Number({ minimum: 1, maximum: 5 }) }) }
   )
 
   // manager dispara nova rodada geral de avaliações (substitui as notas)

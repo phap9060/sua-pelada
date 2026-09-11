@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   integer,
+  real,
   boolean,
   timestamp,
   jsonb,
@@ -111,7 +112,8 @@ export const ratings = pgTable(
     rateeId: uuid("ratee_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    stars: integer("stars").notNull(), // 1..5
+    // 1..5 em passos de 0,5 (permite meia bola/meia luva)
+    stars: real("stars").notNull(),
     round: integer("round").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

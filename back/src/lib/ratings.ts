@@ -1,6 +1,11 @@
 import { sql } from "drizzle-orm";
 import { executeRaw } from "../db";
 
+/** Nota válida: 1 a 5 em passos de 0,5 (1, 1.5, 2 … 5). */
+export function isValidStars(n: number): boolean {
+  return Number.isFinite(n) && n >= 1 && n <= 5 && Number.isInteger(n * 2);
+}
+
 /**
  * Média de bolas de cada membro da pelada.
  * Regra: média das avaliações dos outros; se ninguém avaliou ainda, usa a autoavaliação;

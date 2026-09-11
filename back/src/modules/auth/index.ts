@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { jwt } from "@elysiajs/jwt";
 import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "../../db";
+import { isValidStars } from "../../lib/ratings";
 
 const { users, ratings } = schema;
 
@@ -114,25 +115,30 @@ export const authModule = new Elysia({ prefix: "/auth" })
   // perfil: nome, posição e nota pessoal (autoavaliação vale para todas as peladas)
   .patch(
     "/profile",
-    async ({ body, user }) => {
-      const [updated] = await db
-        .update(users)
-        .set({ name: body.name, position: body.position })
-        .where(eq(users.id, user.id))
-        .returning();
+    async ({ body, user, status }) => {
+      if (body.selfRating != null && !isValidStars(body.selfRating)) {
+        return status(400, { message: "A nota pessoal vai de 1 a 5 em passos de 0,5" });
+      }
+      const patch: { name?: string; position?: "line" | "keeper" } = {};
+      if (body.name !== undefined) patch.name = body.name;
+      if (body.position !== undefined) patch.position = body.position;
+      if (Object.keys(patch).length > 0) {
+        await db.update(users).set(patch).where(eq(users.id, user.id));
+      }
       if (body.selfRating != null) {
         await db
           .update(ratings)
           .set({ stars: body.selfRating })
           .where(and(eq(ratings.raterId, user.id), eq(ratings.rateeId, user.id)));
       }
+      const [updated] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
       return { ...publicUser(updated), selfRating: await latestSelfRating(user.id) };
     },
     {
       body: t.Object({
         name: t.Optional(t.String({ minLength: 2, maxLength: 80 })),
         position: t.Optional(position),
-        selfRating: t.Optional(t.Integer({ minimum: 1, maximum: 5 })),
+        selfRating: t.Optional(t.Number({ minimum: 1, maximum: 5 })),
       }),
     }
   );

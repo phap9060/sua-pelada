@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { and, asc, desc, eq, gt, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "../../db";
 import { authed } from "../auth";
-import { averageRatings } from "../../lib/ratings";
+import { averageRatings, isValidStars } from "../../lib/ratings";
 import { notify } from "../../lib/notify";
 import { getPelada, isManagerOrAssistant, isMember, memberIds } from "../../lib/guards";
 
@@ -30,7 +30,7 @@ const scheduleFields = t.Object({
 // corpos planos (sem t.Intersect — evita validação estrita por membro que rejeita campos extras)
 const createBody = t.Object({
   name: t.String({ minLength: 2, maxLength: 80 }),
-  selfRating: t.Integer({ minimum: 1, maximum: 5 }),
+  selfRating: t.Number({ minimum: 1, maximum: 5 }),
   ...scheduleFields.properties,
 });
 
@@ -117,6 +117,7 @@ export const peladasModule = new Elysia()
     "/peladas",
     async ({ body, user, status }) => {
       if (!user.canManage) return status(403, { message: "Você não tem permissão para gerenciar uma pelada" });
+      if (!isValidStars(body.selfRating)) return status(400, { message: "A nota inicial vai de 1 a 5 em passos de 0,5" });
       const [existing] = await db.select().from(peladas).where(eq(peladas.managerId, user.id)).limit(1);
       if (existing) return status(409, { message: "Você já gerencia uma pelada" });
       const [pelada] = await db
@@ -291,6 +292,7 @@ export const peladasModule = new Elysia()
       const [pelada] = await db.select().from(peladas).where(eq(peladas.inviteToken, params.token)).limit(1);
       if (!pelada) return status(404, { message: "Convite inválido" });
       if (await isMember(pelada.id, user.id)) return status(409, { message: "Você já está nesta pelada" });
+      if (!isValidStars(body.selfRating)) return status(400, { message: "A nota inicial vai de 1 a 5 em passos de 0,5" });
 
       const others = await memberIds(pelada.id);
       if (others.length >= MAX_MEMBERS) return status(400, { message: "Pelada cheia (50 membros)" });
@@ -327,7 +329,7 @@ export const peladasModule = new Elysia()
       }
       return publicPelada(pelada);
     },
-    { body: t.Object({ selfRating: t.Integer({ minimum: 1, maximum: 5 }) }) }
+    { body: t.Object({ selfRating: t.Number({ minimum: 1, maximum: 5 }) }) }
   );
 
 /** Rota pública: informações do convite (para a tela de cadastro antes de logar). */
