@@ -24,12 +24,13 @@ interface PlayerRowProps {
   order?: string;
   trailing?: React.ReactNode;
   children?: React.ReactNode;
+  className?: string;
 }
 
 /** Linha de jogador padrão: ordem opcional + bolinha + nome + extras. */
-export function PlayerRow({ name, position, order, trailing, children }: PlayerRowProps) {
+export function PlayerRow({ name, position, order, trailing, children, className }: PlayerRowProps) {
   return (
-    <Group justify="space-between" wrap="nowrap" px="xs" py={7} style={{ borderRadius: 10 }}>
+    <Group justify="space-between" wrap="nowrap" px="xs" py={7} className={className} style={{ borderRadius: 10 }}>
       <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
         {order && <span className="shirt-num">{order}</span>}
         <PlayerDot name={name} position={position} />

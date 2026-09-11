@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Badge, Button, Card, CopyButton, Group, Menu, Modal, Stack, Text, Title, ActionIcon } from "@mantine/core";
+import { Badge, Button, Card, CopyButton, Group, Menu, Modal, Stack, Text, TextInput, Title, ActionIcon } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useOutletContext } from "react-router-dom";
-import { IconCheck, IconCopy, IconDots, IconLogout, IconShieldCheck, IconUserMinus, IconUserOff } from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconDots, IconLogout, IconSearch, IconShieldCheck, IconUserMinus, IconUserOff } from "@tabler/icons-react";
 import {
   useAppointAssistant,
   useLeavePelada,
@@ -37,17 +37,21 @@ export function MembersTab() {
   const [confirmOpen, { open: openConfirm, close: closeConfirm }] = useDisclosure(false);
   const [leaveOpen, { open: openLeave, close: closeLeave }] = useDisclosure(false);
   const [removeTarget, setRemoveTarget] = useState<(typeof members)[number] | null>(null);
+  const [filter, setFilter] = useState("");
 
   const assistantCount = members.filter((m) => m.role === "assistant").length;
   const atLimit = assistantCount >= MAX_ASSISTANTS;
 
-  // ordem na lista: o próprio usuário sempre primeiro; quando quem vê é o
-  // manager, os auxiliares vêm logo abaixo dele e depois o resto
-  const self = members.filter((m) => m.userId === myUserId);
-  const rest = members.filter((m) => m.userId !== myUserId);
-  const assistants = rest.filter((m) => m.role === "assistant");
-  const plainMembers = rest.filter((m) => m.role !== "assistant");
-  const orderedMembers = isManager ? [...self, ...assistants, ...plainMembers] : [...self, ...rest];
+  // filtro por nome + ordem: o próprio usuário sempre primeiro; quando quem vê
+  // é o manager, os auxiliares vêm logo abaixo dele; o resto em ordem alfabética
+  const norm = filter.trim().toLowerCase();
+  const visible = norm ? members.filter((m) => m.name.toLowerCase().includes(norm)) : members;
+  const byName = (a: (typeof members)[number], b: (typeof members)[number]) => a.name.localeCompare(b.name, "pt-BR");
+  const self = visible.filter((m) => m.userId === myUserId);
+  const rest = visible.filter((m) => m.userId !== myUserId).sort(byName);
+  const assistantRows = isManager ? rest.filter((m) => m.role === "assistant") : [];
+  const otherRows = isManager ? rest.filter((m) => m.role !== "assistant") : rest;
+  const orderedMembers = [...self, ...assistantRows, ...otherRows];
 
   const triggerRound = () => {
     closeConfirm();
@@ -69,13 +73,27 @@ export function MembersTab() {
         {members.length === 0 ? (
           <EmptyState title="Nenhum membro ainda" hint="Compartilhe o link de convite para a turma entrar." />
         ) : (
-          <Stack gap={0}>
-            {orderedMembers.map((m) => (
-              <PlayerRow
-                key={m.userId}
-                name={m.name}
-                position={m.position}
-                trailing={
+          <>
+            {members.length > 1 && (
+              <TextInput
+                placeholder="Filtrar por nome"
+                leftSection={<IconSearch size={15} />}
+                value={filter}
+                onChange={(e) => setFilter(e.currentTarget.value)}
+                mb="sm"
+              />
+            )}
+            {orderedMembers.length === 0 ? (
+              <EmptyState title="Nenhum membro encontrado" hint="Ninguém com esse nome na pelada." />
+            ) : (
+              <Stack gap={0}>
+                {orderedMembers.map((m) => (
+                  <PlayerRow
+                    key={m.userId}
+                    name={m.name}
+                    position={m.position}
+                    className="member-row"
+                    trailing={
                   <Group gap="xs" wrap="nowrap">
                     {m.userId === pelada.managerId ? (
                       <Badge color="refletor" variant="light" size="xs">
@@ -150,7 +168,9 @@ export function MembersTab() {
                 )}
               </PlayerRow>
             ))}
-          </Stack>
+              </Stack>
+            )}
+          </>
         )}
         {isManager && (
           <Text c="dimmed" size="xs" mt="sm">
