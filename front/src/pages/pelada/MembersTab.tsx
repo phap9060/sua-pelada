@@ -41,6 +41,14 @@ export function MembersTab() {
   const assistantCount = members.filter((m) => m.role === "assistant").length;
   const atLimit = assistantCount >= MAX_ASSISTANTS;
 
+  // ordem na lista: o próprio usuário sempre primeiro; quando quem vê é o
+  // manager, os auxiliares vêm logo abaixo dele e depois o resto
+  const self = members.filter((m) => m.userId === myUserId);
+  const rest = members.filter((m) => m.userId !== myUserId);
+  const assistants = rest.filter((m) => m.role === "assistant");
+  const plainMembers = rest.filter((m) => m.role !== "assistant");
+  const orderedMembers = isManager ? [...self, ...assistants, ...plainMembers] : [...self, ...rest];
+
   const triggerRound = () => {
     closeConfirm();
     ratingRound.mutate();
@@ -62,7 +70,7 @@ export function MembersTab() {
           <EmptyState title="Nenhum membro ainda" hint="Compartilhe o link de convite para a turma entrar." />
         ) : (
           <Stack gap={0}>
-            {members.map((m) => (
+            {orderedMembers.map((m) => (
               <PlayerRow
                 key={m.userId}
                 name={m.name}
