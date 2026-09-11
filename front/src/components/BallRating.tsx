@@ -1,4 +1,5 @@
 import { Group, Rating, UnstyledButton } from "@mantine/core";
+import { useState } from "react";
 import { IconBallFootball } from "@tabler/icons-react";
 import { GloveIcon } from "./GloveIcon";
 import type { PlayerPosition } from "../types";
@@ -26,10 +27,12 @@ function HalfSymbol({ symbol, size }: { symbol: React.ReactNode; size: number })
 
 /**
  * Avaliação de 1 a 5: bolas para jogador de linha, luvas para goleiro.
- * No modo editável, clicar em uma bola marca inteiras e a meia-bola (embaixo)
- * liga/desliga o .5 da vez (ex: 3 + meia = 3,5; em 5 inteiro a meia desabilita).
+ * No modo editável, tudo vive na MESMA linha: 5 bolas inteiras + ". meia-bola"
+ * (o ponto + meia liga/desliga o .5 da vez; em 5 inteiro a meia desabilita).
  */
 export function BallRating({ value, onChange, size = 28, readOnly = false, fractions = 2, position = "line" }: BallRatingProps) {
+  const [hover, setHover] = useState<number | null>(null);
+
   const symbol = position === "keeper" ? <GloveIcon size={size} /> : <IconBallFootball size={size} stroke={1.5} />;
   const emptySymbol = <span style={{ opacity: 0.28 }}>{symbol}</span>;
   const unit = position === "keeper" ? "luvas" : "bolas";
@@ -51,32 +54,38 @@ export function BallRating({ value, onChange, size = 28, readOnly = false, fract
 
   const hasHalf = value % 1 !== 0;
   const canToggleHalf = hasHalf || value < 5;
+  const shown = hover ?? Math.floor(value);
+  const itemBox = { display: "inline-flex", lineHeight: 0, flex: "none" } as const;
 
   return (
-    <Group gap={6} wrap="nowrap" align="center">
-      <Rating
-        value={Math.floor(value)}
-        onChange={(v) => onChange(Math.min(v, 5))}
-        count={5}
-        fractions={1}
-        emptySymbol={emptySymbol}
-        fullSymbol={symbol}
-        aria-label={label}
-      />
+    <Group gap={2} wrap="nowrap" align="center" onMouseLeave={() => setHover(null)}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <UnstyledButton
+          key={i}
+          onClick={() => onChange(i + 1)}
+          onMouseEnter={() => setHover(i + 1)}
+          onFocus={() => setHover(i + 1)}
+          onBlur={() => setHover(null)}
+          aria-label={`Avaliar com ${i + 1} ${unit}`}
+          style={itemBox}
+        >
+          {i < shown ? symbol : emptySymbol}
+        </UnstyledButton>
+      ))}
       <UnstyledButton
         onClick={() => onChange(hasHalf ? Math.floor(value) : Math.floor(value) + 0.5)}
         disabled={!canToggleHalf}
+        onMouseEnter={() => setHover(null)}
         aria-label={hasHalf ? "Remover a meia" : "Adicionar a meia"}
         title={hasHalf ? "Remover a meia" : canToggleHalf ? `Adicionar meia ${unit === "luvas" ? "luva" : "bola"}` : undefined}
         style={{
+          ...itemBox,
           opacity: hasHalf ? 1 : canToggleHalf ? 0.6 : 0.3,
           transition: "opacity 120ms",
           cursor: !canToggleHalf ? "not-allowed" : "pointer",
-          display: "inline-flex",
-          alignItems: "center",
         }}
       >
-        <Group gap={2} wrap="nowrap" style={{ alignItems: "center" }}>
+        <Group gap={2} wrap="nowrap" align="center" style={{ lineHeight: 0 }}>
           <span
             style={{
               width: Math.max(size * 0.16, 3),
@@ -84,6 +93,7 @@ export function BallRating({ value, onChange, size = 28, readOnly = false, fract
               borderRadius: 999,
               background: "currentColor",
               display: "inline-block",
+              flex: "none",
             }}
           />
           <HalfSymbol symbol={symbol} size={size} />
