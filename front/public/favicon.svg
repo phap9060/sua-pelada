@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="sp-logo-g" x1="6" y1="4" x2="42" y2="46" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2fae52"/>
+      <stop offset="1" stop-color="#157a38"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="46" height="46" rx="13" fill="url(#sp-logo-g)"/>
+  <rect x="1" y="1" width="46" height="46" rx="13" stroke="rgba(232,242,234,0.25)" stroke-width="1.5"/>
+  <path d="M14 2h8L18 46h-8z" fill="rgba(10,20,13,0.14)"/>
+  <circle cx="24" cy="24" r="12.5" stroke="#f2faf4" stroke-width="2"/>
+  <polygon points="24,17.5 29.9,21.8 27.7,28.7 20.3,28.7 18.1,21.8" fill="#f2faf4"/>
+  <g stroke="#f2faf4" stroke-width="1.8">
+    <path d="M24 11.5v6"/>
+    <path d="M35 19.5l-5.1 2.3"/>
+    <path d="M31.5 34.5l-3.8-5.8"/>
+    <path d="M16.5 34.5l3.8-5.8"/>
+    <path d="M13 19.5l5.1 2.3"/>
+  </g>
+</svg>
