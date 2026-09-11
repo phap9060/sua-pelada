@@ -1,16 +1,14 @@
 import { Box, Button, Card, Group, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { useOutletContext } from "react-router-dom";
 import { useUpdatePelada } from "../../hooks/usePelada";
 import { WeekdayPicker } from "../../components/ui/WeekdayPicker";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import { WEEKDAYS } from "../../utils/date";
-import type { PeladaDetail } from "../../types";
+import type { PeladaOutletContext } from "./PeladaDetail";
 
-interface Props {
-  detail: PeladaDetail;
-}
-
-export function ConfigTab({ detail }: Props) {
+export function ConfigTab() {
+  const { detail } = useOutletContext<PeladaOutletContext>();
   const p = detail.pelada;
   const update = useUpdatePelada(p.id);
 

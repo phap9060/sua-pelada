@@ -1,5 +1,6 @@
 import { Badge, Button, Card, Group, Stack, Text } from "@mantine/core";
 import { IconCrown } from "@tabler/icons-react";
+import { useOutletContext } from "react-router-dom";
 import { useNow } from "../../hooks/useNow";
 import { useCancelConfirmation, useConfirmGame, useCrownChampion, useCrownGoalkeeper, useGame } from "../../hooks/useGame";
 import { GameHero } from "../../components/game/GameHero";
@@ -10,14 +11,12 @@ import { PlayerRow } from "../../components/ui/PlayerRow";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import { Loading } from "../../components/ui/Loading";
 import type { GamePayload } from "../../types";
+import type { PeladaOutletContext } from "./PeladaDetail";
 
-interface Props {
-  peladaId: string;
-  peladaName: string;
-  canManage: boolean;
-}
-
-export function GameTab({ peladaId, peladaName, canManage }: Props) {
+export function GameTab() {
+  const { detail, canManage } = useOutletContext<PeladaOutletContext>();
+  const peladaId = detail.pelada.id;
+  const peladaName = detail.pelada.name;
   const now = useNow();
   const { data: game, isLoading, isError, error } = useGame(peladaId);
   const confirm = useConfirmGame(peladaId);

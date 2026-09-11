@@ -152,7 +152,10 @@ export function NotificationsPage() {
               return (
                 <Card key={n.id} shadow="sm" padding="md" radius="lg" withBorder style={{ opacity: n.readAt ? 0.65 : 1 }}>
                   {typeof payload.peladaId === "string" ? (
-                    <Link to={`/peladas/${payload.peladaId}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    <Link
+                      to={typeof payload.championshipId === "string" ? `/peladas/${payload.peladaId}/campeonato` : `/peladas/${payload.peladaId}`}
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
                       {body}
                     </Link>
                   ) : (

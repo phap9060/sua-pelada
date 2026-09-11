@@ -19,6 +19,11 @@ const Home = lazyPage(() => import("./pages/Home"));
 const CreatePelada = lazyPage(() => import("./pages/CreatePelada"));
 const InvitePage = lazyPage(() => import("./pages/InvitePage"));
 const PeladaDetail = lazyPage(() => import("./pages/pelada/PeladaDetail"));
+const GameTab = lazyPage(() => import("./pages/pelada/GameTab"));
+const ChampionshipTab = lazyPage(() => import("./pages/pelada/ChampionshipTab"));
+const MembersTab = lazyPage(() => import("./pages/pelada/MembersTab"));
+const StatsTab = lazyPage(() => import("./pages/pelada/StatsTab"));
+const ConfigTab = lazyPage(() => import("./pages/pelada/ConfigTab"));
 const RatingsPage = lazyPage(() => import("./pages/RatingsPage"));
 const NotificationsPage = lazyPage(() => import("./pages/NotificationsPage"));
 const ProfilePage = lazyPage(() => import("./pages/ProfilePage"));
@@ -35,7 +40,14 @@ export function App() {
         <Route path="/" element={withSuspense(<Home />)} />
         <Route path="/perfil" element={withSuspense(<ProfilePage />)} />
         <Route path="/peladas/new" element={withSuspense(<CreatePelada />)} />
-        <Route path="/peladas/:id" element={withSuspense(<PeladaDetail />)} />
+        {/* abas da pelada: uma rota por aba (deep-link, histórico e F5 mantêm a aba) */}
+        <Route path="/peladas/:id" element={withSuspense(<PeladaDetail />)}>
+          <Route index element={withSuspense(<GameTab />)} />
+          <Route path="campeonato" element={withSuspense(<ChampionshipTab />)} />
+          <Route path="membros" element={withSuspense(<MembersTab />)} />
+          <Route path="estatisticas" element={withSuspense(<StatsTab />)} />
+          <Route path="configurar" element={withSuspense(<ConfigTab />)} />
+        </Route>
         <Route path="/avaliacoes" element={withSuspense(<RatingsPage />)} />
         <Route path="/notificacoes" element={withSuspense(<NotificationsPage />)} />
       </Route>

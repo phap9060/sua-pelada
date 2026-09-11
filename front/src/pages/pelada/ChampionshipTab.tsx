@@ -9,6 +9,7 @@ import {
   Text,
 } from "@mantine/core";
 import { IconBallFootball, IconCards, IconCrown, IconShoe, IconStar, IconTrophy, IconUserCheck } from "@tabler/icons-react";
+import { useOutletContext } from "react-router-dom";
 import { useChampionshipOptIn, useChampionships } from "../../hooks/useChampionship";
 import { useAuth } from "../../hooks/useAuth";
 import { championshipsService } from "../../services/championships";
@@ -17,15 +18,12 @@ import { ErrorBox } from "../../components/ui/ErrorBox";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Loading } from "../../components/ui/Loading";
 import { fmtDateTime } from "../../utils/date";
-import type { ChampionshipPayload, PeladaDetail } from "../../types";
+import type { ChampionshipPayload } from "../../types";
 import { ChampionshipConfig } from "./championship/ChampionshipConfig";
 import { DraftBoard } from "./championship/DraftBoard";
 import { GroupsBoard } from "./championship/GroupsBoard";
 import { KnockoutBoard } from "./championship/KnockoutBoard";
-
-interface Props {
-  detail: PeladaDetail;
-}
+import type { PeladaOutletContext } from "./PeladaDetail";
 
 const STATUS_LABEL: Record<string, string> = {
   config: "confirmando presença",
@@ -36,7 +34,8 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "cancelado",
 };
 
-export function ChampionshipTab({ detail }: Props) {
+export function ChampionshipTab() {
+  const { detail } = useOutletContext<PeladaOutletContext>();
   const { user } = useAuth();
   const { data, isLoading, isError, error } = useChampionships(detail.pelada.id);
   const [creating, setCreating] = useState(false);
@@ -197,7 +196,7 @@ function MemberOptIn({ champ }: { champ: ChampionshipPayload }) {
 }
 
 /** Estatísticas completas de um campeonato (artilheiros, garçons, cartões, MDJ). */
-export function StatsCard({ champ }: { champ: ChampionshipPayload }) {
+function StatsCard({ champ }: { champ: ChampionshipPayload }) {
   const leaders = champ.leaders;
   return (
     <Card shadow="sm" padding="lg" radius="lg" withBorder>

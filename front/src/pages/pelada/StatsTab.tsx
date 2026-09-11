@@ -1,11 +1,13 @@
 import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { IconCrown, IconHistory, IconRepeat, IconTrophy } from "@tabler/icons-react";
+import { useOutletContext } from "react-router-dom";
 import { useStats } from "../../hooks/useStats";
 import { GloveIcon } from "../../components/GloveIcon";
 import { PlayerRow } from "../../components/ui/PlayerRow";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import { Loading } from "../../components/ui/Loading";
 import { fmtDateTime } from "../../utils/date";
+import type { PeladaOutletContext } from "./PeladaDetail";
 
 function SectionTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -27,8 +29,9 @@ function TrophyBadge({ icon, count }: { icon: React.ReactNode; count: number }) 
   );
 }
 
-export function StatsTab({ peladaId }: { peladaId: string }) {
-  const { data: stats, isLoading, isError, error } = useStats(peladaId);
+export function StatsTab() {
+  const { detail } = useOutletContext<PeladaOutletContext>();
+  const { data: stats, isLoading, isError, error } = useStats(detail.pelada.id);
 
   if (isLoading) return <Loading />;
   if (isError) return <ErrorBox error={error} />;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Badge, Button, Card, CopyButton, Group, Menu, Modal, Stack, Text, Title, ActionIcon } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useOutletContext } from "react-router-dom";
 import { IconCheck, IconCopy, IconDots, IconLogout, IconShieldCheck, IconUserMinus, IconUserOff } from "@tabler/icons-react";
 import {
   useAppointAssistant,
@@ -16,15 +17,12 @@ import { FieldPositionBadge } from "../../components/ui/FieldPositionBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import { fmtDateTime } from "../../utils/date";
-import type { PeladaDetail as PeladaDetailData } from "../../types";
-
-interface Props {
-  detail: PeladaDetailData;
-}
+import type { PeladaOutletContext } from "./PeladaDetail";
 
 const MAX_ASSISTANTS = 3;
 
-export function MembersTab({ detail }: Props) {
+export function MembersTab() {
+  const { detail } = useOutletContext<PeladaOutletContext>();
   const { pelada, myRole, members, exits } = detail;
   const { user } = useAuth();
   const myUserId = user?.id;
