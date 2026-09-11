@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@mantine/core";
 import { BigRedButton } from "../BigRedButton";
+import { ConfirmButton } from "../ui/ConfirmButton";
 import { fmtCountdown } from "../../utils/date";
 import type { GamePayload } from "../../types";
 
@@ -69,9 +70,18 @@ export function ConfirmationButton({ game, now, isBusy, onConfirm, onCancel }: P
       />
       {game.myConfirmation && canEdit && (
         <div style={{ textAlign: "center" }}>
-          <Button color="red" variant="light" disabled={isBusy} onClick={onCancel}>
+          <ConfirmButton
+            title="Desistir do jogo?"
+            message="Você sai da lista e volta para o fim da ordem se confirmar de novo. Suplentes sobem na fila."
+            confirmLabel="Desistir"
+            confirmColor="red"
+            color="red"
+            variant="light"
+            disabled={isBusy}
+            onConfirm={onCancel}
+          >
             Desistir
-          </Button>
+          </ConfirmButton>
         </div>
       )}
     </>

@@ -4,6 +4,7 @@ import { authModule } from "./modules/auth";
 import { peladasModule, invitesPublicModule } from "./modules/peladas";
 import { ratingsModule } from "./modules/ratings";
 import { gamesModule } from "./modules/games";
+import { championshipsModule } from "./modules/championships";
 import { notificationsModule } from "./modules/notifications";
 import { statsModule } from "./modules/stats";
 import { startScheduler } from "./jobs/scheduler";
@@ -34,6 +35,7 @@ const app = new Elysia()
   .use(invitesPublicModule)
   .use(ratingsModule)
   .use(gamesModule)
+  .use(championshipsModule)
   .use(notificationsModule)
   .use(statsModule)
   .listen(PORT);

@@ -9,8 +9,9 @@ import { GameTab } from "./GameTab";
 import { MembersTab } from "./MembersTab";
 import { StatsTab } from "./StatsTab";
 import { ConfigTab } from "./ConfigTab";
+import { ChampionshipTab } from "./ChampionshipTab";
 
-type Tab = "jogo" | "membros" | "stats" | "config";
+type Tab = "jogo" | "campeonato" | "membros" | "stats" | "config";
 
 export function PeladaDetail() {
   const { id = "" } = useParams();
@@ -50,6 +51,7 @@ export function PeladaDetail() {
       <Tabs value={tab} onChange={(v) => setTab((v ?? "jogo") as Tab)} variant="pills" className="sp-tabs">
         <Tabs.List>
           <Tabs.Tab value="jogo">Jogo</Tabs.Tab>
+          <Tabs.Tab value="campeonato">Campeonato</Tabs.Tab>
           <Tabs.Tab value="membros">Membros</Tabs.Tab>
           <Tabs.Tab value="stats">Estatísticas</Tabs.Tab>
           {canManage && <Tabs.Tab value="config">Configurar</Tabs.Tab>}
@@ -57,6 +59,7 @@ export function PeladaDetail() {
       </Tabs>
 
       {tab === "jogo" && <GameTab peladaId={pelada.id} peladaName={pelada.name} canManage={canManage} />}
+      {tab === "campeonato" && <ChampionshipTab detail={detail} />}
       {tab === "membros" && <MembersTab detail={detail} />}
       {tab === "stats" && <StatsTab peladaId={pelada.id} />}
       {tab === "config" && canManage && <ConfigTab detail={detail} />}

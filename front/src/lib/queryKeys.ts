@@ -13,6 +13,9 @@ export const gameKey = (peladaId: string) => ["game", peladaId] as const;
 
 export const statsKey = (peladaId: string) => ["pelada", peladaId, "stats"] as const;
 
+export const ALL_CHAMPIONSHIPS_KEY = ["championship"] as const;
+export const championshipListKey = (peladaId: string) => ["championship", "pelada", peladaId] as const;
+
 export const PENDING_RATINGS_KEY = ["ratings", "pending"] as const;
 
 export const NOTIFICATIONS_KEY = ["notifications"] as const;

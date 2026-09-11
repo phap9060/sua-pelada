@@ -5,9 +5,12 @@ import {
   IconBellOff,
   IconBolt,
   IconCrown,
+  IconLogout,
   IconMail,
   IconStar,
+  IconTarget,
   IconTrophy,
+  IconUserMinus,
   IconUserPlus,
 } from "@tabler/icons-react";
 import { useNotifications, useReadAllNotifications } from "../hooks/useNotifications";
@@ -28,6 +31,18 @@ function message(type: string, data: Record<string, unknown>): string {
       return `Os times da pelada ${data.peladaName} foram sorteados. Confira!`;
     case "assistant":
       return `Você virou auxiliar da pelada ${data.peladaName}! Agora pode consagrar campeões, editar a pelada e disparar rodadas de avaliação.`;
+    case "removed":
+      return `Você foi removido da pelada ${data.peladaName}. Pode voltar pelo link de convite quando quiser.`;
+    case "member_left":
+      return `${data.memberName} saiu da pelada ${data.peladaName}.`;
+    case "championship_created":
+      return `Campeonato "${data.championshipName}" montado na pelada ${data.peladaName}! Confirme sua presença na aba Campeonato.`;
+    case "championship_draft_started":
+      return `O draft do "${data.championshipName}" começou. Capitães, preparem as escolhas!`;
+    case "championship_draft_finalized":
+      return `Draft do "${data.championshipName}" finalizado. Confira os times e a tabela de jogos!`;
+    case "championship_champion":
+      return `${data.championTeamName} é o campeão do "${data.championshipName}"! Confira o histórico da pelada.`;
     default:
       return "Nova notificação";
   }
@@ -39,6 +54,12 @@ const ICONS: Record<string, React.ReactNode> = {
   game_open: <IconBolt size={18} stroke={1.6} />,
   teams_drawn: <IconTrophy size={18} stroke={1.6} />,
   assistant: <IconCrown size={18} stroke={1.6} />,
+  removed: <IconUserMinus size={18} stroke={1.6} />,
+  member_left: <IconLogout size={18} stroke={1.6} />,
+  championship_created: <IconTrophy size={18} stroke={1.6} />,
+  championship_draft_started: <IconTarget size={18} stroke={1.6} />,
+  championship_draft_finalized: <IconTrophy size={18} stroke={1.6} />,
+  championship_champion: <IconCrown size={18} stroke={1.6} />,
 };
 
 export function NotificationsPage() {

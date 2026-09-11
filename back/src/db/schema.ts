@@ -80,6 +80,24 @@ export const peladaAssistants = pgTable(
   (t) => [uniqueIndex("pelada_assistants_unique").on(t.peladaId, t.userId)]
 );
 
+// quem saiu ou foi removido da pelada (seção "jogadores que desistiram")
+export const peladaExits = pgTable(
+  "pelada_exits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    peladaId: uuid("pelada_id")
+      .notNull()
+      .references(() => peladas.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // nome na data da saída (congela mesmo que o usuário mude o nome depois)
+    name: text("name").notNull(),
+    exitedAt: timestamp("exited_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("pelada_exits_unique").on(t.peladaId, t.userId)]
+);
+
 export const ratings = pgTable(
   "ratings",
   {
@@ -201,4 +219,173 @@ export const notifications = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("notifications_user_idx").on(t.userId, t.readAt)]
+);
+
+// ---------- Campeonato (temporada interna da pelada) ----------
+
+// "draft" aberto; "sorteio" existe na UI mas segue desabilitado
+export const championshipModes = ["draft", "sorteio"] as const;
+export type ChampionshipMode = (typeof championshipModes)[number];
+
+export const championshipStatuses = ["config", "drafting", "groups", "knockout", "finished", "cancelled"] as const;
+export type ChampionshipStatus = (typeof championshipStatuses)[number];
+
+// base do level exibido no draft: média da pelada OU média das bolas dadas pelos capitães
+export const championshipLevelBasis = ["pelada", "captains"] as const;
+export type ChampionshipLevelBasis = (typeof championshipLevelBasis)[number];
+
+export const championshipMatchStages = ["group", "knockout"] as const;
+export type ChampionshipMatchStage = (typeof championshipMatchStages)[number];
+
+export const matchEventTypes = ["goal", "assist", "yellow", "red", "motm"] as const;
+export type MatchEventType = (typeof matchEventTypes)[number];
+
+export const championships = pgTable(
+  "championships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    peladaId: uuid("pelada_id")
+      .notNull()
+      .references(() => peladas.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    mode: text("mode", { enum: championshipModes }).notNull().default("draft"),
+    status: text("status", { enum: championshipStatuses }).notNull().default("config"),
+    levelBasis: text("level_basis", { enum: championshipLevelBasis }).notNull().default("pelada"),
+    snakeDraft: boolean("snake_draft").notNull().default(true),
+    // quantos times passam para o mata-mata (potência de 2, entre 2 e N-2)
+    qualifiersCount: integer("qualifiers_count").notNull().default(2),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  },
+  (t) => [index("championships_pelada_idx").on(t.peladaId, t.createdAt)]
+);
+
+// opt-in: quem confirmou presença no campeonato entra no pool do draft
+export const championshipOptIns = pgTable(
+  "championship_opt_ins",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    championshipId: uuid("championship_id")
+      .notNull()
+      .references(() => championships.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("championship_opt_ins_unique").on(t.championshipId, t.userId)]
+);
+
+export const championshipTeams = pgTable(
+  "championship_teams",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    championshipId: uuid("championship_id")
+      .notNull()
+      .references(() => championships.id, { onDelete: "cascade" }),
+    captainUserId: uuid("captain_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    // posição do capitão na ordem base do draft (1..N, pior level primeiro por padrão)
+    orderIndex: integer("order_index").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("championship_teams_captain_unique").on(t.championshipId, t.captainUserId),
+    index("championship_teams_champ_idx").on(t.championshipId),
+  ]
+);
+
+export const championshipPlayers = pgTable(
+  "championship_players",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => championshipTeams.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("championship_players_unique").on(t.teamId, t.userId),
+    index("championship_players_user_idx").on(t.userId),
+  ]
+);
+
+// histórico de escolhas do draft (permite undo e reconstruir a ordem)
+export const championshipPicks = pgTable(
+  "championship_picks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    championshipId: uuid("championship_id")
+      .notNull()
+      .references(() => championships.id, { onDelete: "cascade" }),
+    // overall da escolha (0-based): round = floor(overall / N), slot = overall % N
+    overall: integer("overall").notNull(),
+    round: integer("round").notNull(), // 1-based
+    slot: integer("slot").notNull(), // posição do time dentro da rodada (1-based)
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => championshipTeams.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    pickedByUserId: uuid("picked_by_user_id")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("championship_picks_overall_unique").on(t.championshipId, t.overall),
+    uniqueIndex("championship_picks_user_unique").on(t.championshipId, t.userId),
+  ]
+);
+
+export const championshipMatches = pgTable(
+  "championship_matches",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    championshipId: uuid("championship_id")
+      .notNull()
+      .references(() => championships.id, { onDelete: "cascade" }),
+    stage: text("stage", { enum: championshipMatchStages }).notNull(),
+    // fase de grupos: rodada 1..N-1; mata-mata: 1 = primeira fase do mata, cresce até a final
+    round: integer("round").notNull(),
+    slot: integer("slot").notNull().default(0), // ordem do jogo dentro da rodada
+    homeTeamId: uuid("home_team_id")
+      .notNull()
+      .references(() => championshipTeams.id, { onDelete: "cascade" }),
+    awayTeamId: uuid("away_team_id")
+      .notNull()
+      .references(() => championshipTeams.id, { onDelete: "cascade" }),
+    homeScore: integer("home_score"),
+    awayScore: integer("away_score"),
+    // mata-mata: placar dos pênaltis quando empata no tempo normal
+    homePenalties: integer("home_penalties"),
+    awayPenalties: integer("away_penalties"),
+    winnerTeamId: uuid("winner_team_id").references(() => championshipTeams.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("championship_matches_champ_idx").on(t.championshipId, t.stage, t.round)]
+);
+
+// eventos de uma partida: gols/assistências/cartões/melhor do jogo (sem minuto)
+export const championshipMatchEvents = pgTable(
+  "championship_match_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    matchId: uuid("match_id")
+      .notNull()
+      .references(() => championshipMatches.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type", { enum: matchEventTypes }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("championship_match_events_match_idx").on(t.matchId)]
 );
