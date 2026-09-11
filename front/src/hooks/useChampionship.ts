@@ -55,8 +55,10 @@ export function useStartDraft(championshipId: string) {
   );
 }
 
-export function useCaptainRatingRound(championshipId: string) {
-  return useChampMutation<void>(championshipId, () => championshipsService.captainRatingRound(championshipId));
+export function useCaptainRatingRound(championshipId?: string) {
+  return useChampMutation(championshipId ?? "", (id?: string) =>
+    championshipsService.captainRatingRound(id ?? championshipId ?? "")
+  );
 }
 
 export function useDraftPick(championshipId: string) {

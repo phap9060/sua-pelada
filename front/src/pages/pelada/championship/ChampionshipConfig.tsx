@@ -15,7 +15,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconArrowDown, IconArrowUp, IconFlag, IconTrophy } from "@tabler/icons-react";
+import { IconArrowDown, IconArrowUp, IconFlag, IconSearch, IconTrophy } from "@tabler/icons-react";
 import {
   useCancelChampionship,
   useCaptainRatingRound,
@@ -46,8 +46,10 @@ export function ChampionshipConfig({ detail, champ }: Props) {
   const update = useUpdateChampionship(champ?.id ?? "");
   const startDraft = useStartDraft(champ?.id ?? "");
   const cancel = useCancelChampionship(champ?.id ?? "");
-  const captainRound = useCaptainRatingRound(champ?.id ?? "");
+  const captainRound = useCaptainRatingRound(champ?.id);
   const [captainRoundSent, setCaptainRoundSent] = useState(false);
+  const [wantsCaptainRound, setWantsCaptainRound] = useState(false);
+  const [captainFilter, setCaptainFilter] = useState("");
 
   const [name, setName] = useState(champ?.name ?? "");
   const [teamCount, setTeamCount] = useState<number>(champ?.teamCount ?? 4);
@@ -58,6 +60,11 @@ export function ChampionshipConfig({ detail, champ }: Props) {
 
   const memberOptions = detail.members.map((m) => ({ value: m.userId, label: m.name }));
   const memberNameById = new Map(detail.members.map((m) => [m.userId, m.name]));
+  const captainFilterNorm = captainFilter.trim().toLowerCase();
+  const filteredMemberOptions =
+    captainFilterNorm.length > 0
+      ? memberOptions.filter((m) => m.label.toLowerCase().includes(captainFilterNorm))
+      : memberOptions;
 
   const qualifiersOptions = powersOfTwoUpTo(teamCount).map((v) => ({ value: String(v), label: `${v} times` }));
   const captainsComplete = captainIds.length === teamCount;
@@ -98,7 +105,23 @@ export function ChampionshipConfig({ detail, champ }: Props) {
         { onSuccess: () => notifications.show({ title: "Configuração salva", message: "Tudo pronto para iniciar o draft.", color: "grass" }) }
       );
     } else {
-      create.mutate(body);
+      create.mutate(body, {
+        onSuccess: (created) => {
+          if (wantsCaptainRound && created?.id) {
+            captainRound.mutate(created.id, {
+              onSuccess: () => {
+                setWantsCaptainRound(false);
+                setCaptainRoundSent(true);
+                notifications.show({
+                  title: "Rodada enviada aos capitães",
+                  message: "O draft vai usar as notas atualizadas deles.",
+                  color: "grass",
+                });
+              },
+            });
+          }
+        },
+      });
     }
   };
 
@@ -173,13 +196,22 @@ export function ChampionshipConfig({ detail, champ }: Props) {
             <Text size="sm" fw={700}>
               Capitães ({captainIds.length}/{teamCount})
             </Text>
+            {!isEdit && (
+              <TextInput
+                placeholder="Digite o nome para filtrar"
+                label="Filtrar membros"
+                leftSection={<IconSearch size={15} />}
+                value={captainFilter}
+                onChange={(e) => setCaptainFilter(e.currentTarget.value)}
+              />
+            )}
             <MultiSelect
               placeholder="Escolha um capitão por time"
-              data={memberOptions}
+              data={filteredMemberOptions}
               value={captainIds}
-              searchable
               onChange={(values) => setCaptainIds(values)}
               disabled={isEdit}
+              nothingFoundMessage="Nenhum membro com esse nome"
             />
             {captainIds.length > 0 && !isEdit && (
               <Text size="xs" c={captainsComplete ? "dimmed" : "red"}>
@@ -228,14 +260,19 @@ export function ChampionshipConfig({ detail, champ }: Props) {
                 <Text size="xs" c="dimmed">
                   Usa as notas que os capitães escolhidos já deram na pelada; sem nota, cai para a média da pelada.
                 </Text>
-                {isEdit && champ && (
-                  <Group align="flex-start" wrap="nowrap" px="xs" py={8} style={{ borderRadius: 10, border: "1px solid var(--sp-chalk-faint)" }}>
-                    <Switch
-                      label="Nova rodada de avaliação apenas para os capitães?"
-                      description="Envia uma tarefa de avaliação só para eles; o draft já abre com as notas novas."
-                      checked={captainRoundSent}
-                      onChange={(e) => {
-                        if (e.currentTarget.checked) {
+                <Group align="flex-start" wrap="nowrap" px="xs" py={8} style={{ borderRadius: 10, border: "1px solid var(--sp-chalk-faint)" }}>
+                  <Switch
+                    label="Nova rodada de avaliação apenas para os capitães?"
+                    description={
+                      isEdit && champ
+                        ? "Envia uma tarefa de avaliação só para eles; o draft já abre com as notas novas."
+                        : "Assim que o campeonato for criado, os capitães recebem a tarefa de avaliar a turma — o draft já abre com as notas novas."
+                    }
+                    checked={isEdit && champ ? captainRoundSent : wantsCaptainRound}
+                    onChange={(e) => {
+                      const on = e.currentTarget.checked;
+                      if (isEdit && champ) {
+                        if (on) {
                           captainRound.mutate(undefined, {
                             onSuccess: () => {
                               setCaptainRoundSent(true);
@@ -249,10 +286,12 @@ export function ChampionshipConfig({ detail, champ }: Props) {
                         } else {
                           setCaptainRoundSent(false);
                         }
-                      }}
-                    />
-                  </Group>
-                )}
+                      } else {
+                        setWantsCaptainRound(on);
+                      }
+                    }}
+                  />
+                </Group>
                 {captainRound.error != null && <ErrorBox error={captainRound.error} />}
               </>
             )}
