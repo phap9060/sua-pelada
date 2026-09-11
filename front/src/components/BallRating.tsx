@@ -1,4 +1,4 @@
-import { Rating, Stack, UnstyledButton } from "@mantine/core";
+import { Group, Rating, Stack, UnstyledButton } from "@mantine/core";
 import { IconBallFootball } from "@tabler/icons-react";
 import { GloveIcon } from "./GloveIcon";
 import type { PlayerPosition } from "../types";
@@ -74,7 +74,18 @@ export function BallRating({ value, onChange, size = 28, readOnly = false, fract
           cursor: !canToggleHalf ? "not-allowed" : "pointer",
         }}
       >
-        <HalfSymbol symbol={symbol} size={size} />
+        <Group gap={2} wrap="nowrap" style={{ alignItems: "center" }}>
+          <span
+            style={{
+              width: Math.max(size * 0.16, 3),
+              height: Math.max(size * 0.16, 3),
+              borderRadius: 999,
+              background: "currentColor",
+              display: "inline-block",
+            }}
+          />
+          <HalfSymbol symbol={symbol} size={size} />
+        </Group>
       </UnstyledButton>
     </Stack>
   );
