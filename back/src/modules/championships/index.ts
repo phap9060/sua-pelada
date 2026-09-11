@@ -310,6 +310,8 @@ async function championshipPayload(champ: Championship, viewerId: string) {
       userId: championshipPlayers.userId,
       name: users.name,
       position: users.position,
+      fieldPosition: users.fieldPosition,
+      fieldPositionSecondary: users.fieldPositionSecondary,
     })
     .from(championshipPlayers)
     .innerJoin(users, eq(users.id, championshipPlayers.userId))
@@ -363,7 +365,16 @@ async function championshipPayload(champ: Championship, viewerId: string) {
 
   const members = pelada ? await memberIds(champ.peladaId) : [];
   const memberNameRows = members.length
-    ? await db.select({ id: users.id, name: users.name, position: users.position }).from(users).where(inArray(users.id, members))
+    ? await db
+        .select({
+          id: users.id,
+          name: users.name,
+          position: users.position,
+          fieldPosition: users.fieldPosition,
+          fieldPositionSecondary: users.fieldPositionSecondary,
+        })
+        .from(users)
+        .where(inArray(users.id, members))
     : [];
   const memberById = new Map(memberNameRows.map((u) => [u.id, u]));
 
@@ -374,6 +385,8 @@ async function championshipPayload(champ: Championship, viewerId: string) {
       userId: m.id,
       name: m.name,
       position: m.position,
+      fieldPosition: m.fieldPosition,
+      fieldPositionSecondary: m.fieldPositionSecondary,
       level: Math.round((levels.get(m.id) ?? 3) * 10) / 10,
       picked: pickedUserIds.has(m.id),
     }))
@@ -386,7 +399,13 @@ async function championshipPayload(champ: Championship, viewerId: string) {
     captain: { id: t.captainUserId, name: nameById.get(t.captainUserId) ?? "?" },
     players: playerRows
       .filter((p) => p.teamId === t.id)
-      .map((p) => ({ userId: p.userId, name: p.name, position: p.position }))
+      .map((p) => ({
+        userId: p.userId,
+        name: p.name,
+        position: p.position,
+        fieldPosition: p.fieldPosition,
+        fieldPositionSecondary: p.fieldPositionSecondary,
+      }))
       .sort((a, b) => (a.position === "keeper" ? -1 : 0) - (b.position === "keeper" ? -1 : 0)),
   }));
 

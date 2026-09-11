@@ -4,6 +4,7 @@ import { db, schema } from "../../db";
 import { authed } from "../auth";
 import { getPelada, isManagerOrAssistant, isMember } from "../../lib/guards";
 import { ensureCurrentGame, getQuotaLists, goalkeeperState } from "../../lib/draw";
+import type { FieldPosition } from "../../db/schema";
 
 const { games, gameConfirmations, teams, teamPlayers, users, peladas } = schema;
 
@@ -49,18 +50,26 @@ async function gamePayload(game: typeof games.$inferSelect, pelada: typeof pelad
   );
   const names = allIds.length
     ? await db
-        .select({ id: users.id, name: users.name, position: users.position })
+        .select({
+          id: users.id,
+          name: users.name,
+          position: users.position,
+          fieldPosition: users.fieldPosition,
+          fieldPositionSecondary: users.fieldPositionSecondary,
+        })
         .from(users)
         .where(inArray(users.id, allIds))
     : [];
-  const nameMap = new Map(names.map((n) => [n.id, { name: n.name, position: n.position }]));
+  const nameMap = new Map(names.map((n) => [n.id, n]));
 
   const withName = (c: { userId: string; confirmedAt: Date }) => ({
     userId: c.userId,
     name: nameMap.get(c.userId)?.name ?? "?",
     position: (nameMap.get(c.userId)?.position ?? "line") as string,
+    fieldPosition: nameMap.get(c.userId)?.fieldPosition ?? "meia",
+    fieldPositionSecondary: nameMap.get(c.userId)?.fieldPositionSecondary ?? null,
     confirmedAt: c.confirmedAt,
-  });
+  }) satisfies { userId: string; name: string; position: string; fieldPosition: FieldPosition; fieldPositionSecondary: FieldPosition | null; confirmedAt: Date };
 
   const lineGroup = buildGroup("line", quotas.line.titulares.map(withName), quotas.line.suplentes.map(withName), pelada.listCapacity, userId);
   const keeperGroup = buildGroup(
@@ -81,6 +90,8 @@ async function gamePayload(game: typeof games.$inferSelect, pelada: typeof pelad
       playerId: teamPlayers.userId,
       playerName: users.name,
       playerPosition: users.position,
+      playerFieldPosition: users.fieldPosition,
+      playerFieldPositionSecondary: users.fieldPositionSecondary,
     })
     .from(teams)
     .leftJoin(teamPlayers, eq(teamPlayers.teamId, teams.id))
@@ -90,13 +101,27 @@ async function gamePayload(game: typeof games.$inferSelect, pelada: typeof pelad
 
   const teamMap = new Map<
     string,
-    { id: string; name: string; queueOrder: number; isChampion: boolean; players: { id: string; name: string; position: string }[] }
+    {
+      id: string;
+      name: string;
+      queueOrder: number;
+      isChampion: boolean;
+      players: { id: string; name: string; position: string; fieldPosition: FieldPosition; fieldPositionSecondary: FieldPosition | null }[];
+    }
   >();
   for (const row of teamRows) {
     if (!teamMap.has(row.teamId)) {
       teamMap.set(row.teamId, { id: row.teamId, name: row.teamName, queueOrder: row.queueOrder, isChampion: row.isChampion, players: [] });
     }
-    if (row.playerId) teamMap.get(row.teamId)!.players.push({ id: row.playerId, name: row.playerName!, position: row.playerPosition! });
+    if (row.playerId) {
+      teamMap.get(row.teamId)!.players.push({
+        id: row.playerId,
+        name: row.playerName!,
+        position: row.playerPosition!,
+        fieldPosition: row.playerFieldPosition!,
+        fieldPositionSecondary: row.playerFieldPositionSecondary,
+      });
+    }
   }
   // goleiro primeiro no time
   for (const team of teamMap.values()) {

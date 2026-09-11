@@ -3,6 +3,7 @@ import { Badge, Button, Card, Group, Modal, Stack, Text } from "@mantine/core";
 import { IconArrowBackUp, IconChecks, IconTarget } from "@tabler/icons-react";
 import { useDraftPick, useFinalizeDraft, useUndoPick } from "../../../hooks/useChampionship";
 import { PlayerDot, PlayerRow } from "../../../components/ui/PlayerRow";
+import { FieldPositionBadge } from "../../../components/ui/FieldPositionBadge";
 import { ErrorBox } from "../../../components/ui/ErrorBox";
 import type { ChampionshipPayload } from "../../../types";
 
@@ -68,6 +69,7 @@ export function DraftBoard({ champ, canManage, myUserId }: Props) {
                   ) : undefined
                 }
               >
+                <FieldPositionBadge primary={p.fieldPosition} secondary={p.fieldPositionSecondary} position={p.position} />
                 <Badge size="xs" variant="light" color="grass">
                   {p.level.toFixed(1)}
                 </Badge>

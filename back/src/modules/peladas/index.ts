@@ -158,7 +158,14 @@ export const peladasModule = new Elysia()
     if (!(await isMember(pelada.id, user.id))) return status(403, { message: "Você não é membro desta pelada" });
 
     const members = await db
-      .select({ userId: peladaMembers.userId, joinedAt: peladaMembers.joinedAt, name: users.name, position: users.position })
+      .select({
+        userId: peladaMembers.userId,
+        joinedAt: peladaMembers.joinedAt,
+        name: users.name,
+        position: users.position,
+        fieldPosition: users.fieldPosition,
+        fieldPositionSecondary: users.fieldPositionSecondary,
+      })
       .from(peladaMembers)
       .innerJoin(users, eq(users.id, peladaMembers.userId))
       .where(eq(peladaMembers.peladaId, pelada.id))
@@ -186,6 +193,8 @@ export const peladasModule = new Elysia()
         userId: m.userId,
         name: m.name,
         position: m.position,
+        fieldPosition: m.fieldPosition,
+        fieldPositionSecondary: m.fieldPositionSecondary,
         role: roleOf(m.userId),
         joinedAt: m.joinedAt,
         avgRating: Math.round((averages.get(m.userId) ?? 3) * 100) / 100,

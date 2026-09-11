@@ -7,6 +7,7 @@ type InviteScoped = ReturnType<(typeof api)["invites"]>;
 
 export type User = Data<typeof api.auth.me.get>;
 export type PlayerPosition = "line" | "keeper";
+export type FieldPosition = "zagueiro" | "meia" | "atacante";
 export type Mine = Data<typeof api.peladas.mine.get>;
 export type Pelada = NonNullable<Mine["managed"]>;
 export type PeladaDetail = Data<PeladaScoped["get"]>;

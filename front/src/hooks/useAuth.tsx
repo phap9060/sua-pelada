@@ -76,8 +76,7 @@ export function useUpdatePosition() {
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: { name?: string; position?: PlayerPosition; selfRating?: number }) =>
-      authService.updateProfile(body),
+    mutationFn: authService.updateProfile,
     onSuccess: (updated) => {
       queryClient.setQueryData<User | null>(ME_KEY, (current) => (current ? { ...current, ...updated } : current));
       // nota pessoal entra na média dos sorteios -> recarrega peladas e jogos

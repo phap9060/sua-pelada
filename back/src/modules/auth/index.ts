@@ -3,6 +3,7 @@ import { jwt } from "@elysiajs/jwt";
 import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "../../db";
 import { isValidStars } from "../../lib/ratings";
+import { type FieldPosition } from "../../db/schema";
 
 const { users, ratings } = schema;
 
@@ -30,9 +31,19 @@ const credentials = t.Object({
 });
 
 const position = t.Union([t.Literal("line"), t.Literal("keeper")]);
+const fieldPosition = t.Union([t.Literal("zagueiro"), t.Literal("meia"), t.Literal("atacante")]);
 
 function publicUser(u: typeof users.$inferSelect) {
-  return { id: u.id, name: u.name, email: u.email, canManage: u.canManage, position: u.position, selfRating: null };
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    canManage: u.canManage,
+    position: u.position,
+    fieldPosition: u.fieldPosition,
+    fieldPositionSecondary: u.fieldPositionSecondary,
+    selfRating: null,
+  };
 }
 
 /** Última autoavaliação do usuário (nota pessoal), se existir. */
@@ -119,9 +130,25 @@ export const authModule = new Elysia({ prefix: "/auth" })
       if (body.selfRating != null && !isValidStars(body.selfRating)) {
         return status(400, { message: "A nota pessoal vai de 1 a 5 em passos de 0,5" });
       }
-      const patch: { name?: string; position?: "line" | "keeper" } = {};
+      const patch: {
+        name?: string;
+        position?: "line" | "keeper";
+        fieldPosition?: FieldPosition;
+        fieldPositionSecondary?: FieldPosition | null;
+      } = {};
       if (body.name !== undefined) patch.name = body.name;
       if (body.position !== undefined) patch.position = body.position;
+      if (body.fieldPosition !== undefined) patch.fieldPosition = body.fieldPosition;
+      if (body.fieldPositionSecondary !== undefined) {
+        // null limpa a secundária; valor preenchido precisa ser diferente da primária efetiva
+        patch.fieldPositionSecondary = body.fieldPositionSecondary;
+      }
+      const effectivePrimary = body.fieldPosition ?? user.fieldPosition;
+      const effectiveSecondary =
+        body.fieldPositionSecondary !== undefined ? body.fieldPositionSecondary : user.fieldPositionSecondary;
+      if (effectivePrimary === effectiveSecondary) {
+        return status(400, { message: "A posição secundária tem que ser diferente da preferencial" });
+      }
       if (Object.keys(patch).length > 0) {
         await db.update(users).set(patch).where(eq(users.id, user.id));
       }
@@ -138,6 +165,8 @@ export const authModule = new Elysia({ prefix: "/auth" })
       body: t.Object({
         name: t.Optional(t.String({ minLength: 2, maxLength: 80 })),
         position: t.Optional(position),
+        fieldPosition: t.Optional(fieldPosition),
+        fieldPositionSecondary: t.Optional(t.Union([fieldPosition, t.Null()])),
         selfRating: t.Optional(t.Number({ minimum: 1, maximum: 5 })),
       }),
     }

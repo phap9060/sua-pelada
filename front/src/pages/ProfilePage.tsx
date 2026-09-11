@@ -1,12 +1,19 @@
-import { Button, Card, Group, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Button, Card, Group, Select, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconBallFootball, IconLogout } from "@tabler/icons-react";
 import { useAuth, useUpdateProfile } from "../hooks/useAuth";
 import { BallRating } from "../components/BallRating";
 import { GloveIcon } from "../components/GloveIcon";
 import { PlayerDot } from "../components/ui/PlayerRow";
+import { fieldPositionLabel } from "../components/ui/FieldPositionBadge";
 import { ErrorBox } from "../components/ui/ErrorBox";
-import type { PlayerPosition } from "../types";
+import type { FieldPosition, PlayerPosition } from "../types";
+
+const FIELD_OPTIONS: { value: FieldPosition; label: string }[] = [
+  { value: "zagueiro", label: "Zagueiro" },
+  { value: "meia", label: "Meia" },
+  { value: "atacante", label: "Atacante" },
+];
 
 export function ProfilePage() {
   const { user, logout } = useAuth();
@@ -16,16 +23,31 @@ export function ProfilePage() {
     initialValues: {
       name: user?.name ?? "",
       position: (user?.position ?? "line") as PlayerPosition,
+      fieldPosition: (user?.fieldPosition ?? "meia") as FieldPosition,
+      fieldPositionSecondary: (user?.fieldPositionSecondary ?? "") as FieldPosition | "",
       selfRating: user?.selfRating ?? 3,
     },
     validate: {
       name: (v) => (v.trim().length >= 2 ? null : "Informe um nome (mín. 2 caracteres)"),
+      fieldPositionSecondary: (v, values) =>
+        v && v === values.fieldPosition ? "A secundária tem que ser diferente da preferencial" : null,
     },
   });
 
   const submit = form.onSubmit((values) => {
-    update.mutate({ ...values, position: values.position as PlayerPosition });
+    update.mutate({
+      name: values.name,
+      position: values.position as PlayerPosition,
+      fieldPosition: values.fieldPosition,
+      fieldPositionSecondary: values.fieldPositionSecondary || null,
+      selfRating: values.selfRating,
+    });
   });
+
+  const isLine = form.values.position === "line";
+  const headerPosition = isLine
+    ? ["linha", fieldPositionLabel(form.values.fieldPosition, form.values.fieldPositionSecondary || null)].filter(Boolean).join(" · ")
+    : "goleiro";
 
   return (
     <Stack gap="md" maw={640}>
@@ -37,8 +59,7 @@ export function ProfilePage() {
               {user?.name}
             </Title>
             <Text c="dimmed" size="sm" className="digits">
-              {form.values.position === "keeper" ? "goleiro" : "linha"} · nota pessoal{" "}
-              {form.values.selfRating.toFixed(1)}
+              {headerPosition} · nota pessoal {form.values.selfRating.toFixed(1)}
             </Text>
           </Stack>
         </Group>
@@ -86,6 +107,23 @@ export function ProfilePage() {
                 Define como você aparece nas listas e como é avaliado: bolas (linha) ou luvas (goleiro).
               </Text>
             </div>
+
+            {isLine && (
+              <Group grow align="flex-start">
+                <Select
+                  label="Posição preferencial"
+                  data={FIELD_OPTIONS}
+                  {...form.getInputProps("fieldPosition")}
+                />
+                <Select
+                  label="Posição secundária"
+                  placeholder="Opcional"
+                  data={FIELD_OPTIONS}
+                  clearable
+                  {...form.getInputProps("fieldPositionSecondary")}
+                />
+              </Group>
+            )}
 
             <div>
               <Text size="sm" fw={500} mb={6}>

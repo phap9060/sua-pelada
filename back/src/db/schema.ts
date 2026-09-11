@@ -14,6 +14,10 @@ import {
 export const playerPosition = ["line", "keeper"] as const;
 export type PlayerPosition = (typeof playerPosition)[number];
 
+// posição de linha (informativa): preferencial + secundária opcional
+export const fieldPositions = ["zagueiro", "meia", "atacante"] as const;
+export type FieldPosition = (typeof fieldPositions)[number];
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -23,6 +27,10 @@ export const users = pgTable("users", {
   canManage: boolean("can_manage").notNull().default(false),
   // linha ou goleiro (alterável pelo próprio usuário; não zera as notas)
   position: text("position", { enum: playerPosition }).notNull().default("line"),
+  // posição preferencial em campo (só faz sentido na linha); nasce meia
+  fieldPosition: text("field_position", { enum: fieldPositions }).notNull().default("meia"),
+  // posição secundária, opcional; quando preenchida tem que ser diferente da preferencial
+  fieldPositionSecondary: text("field_position_secondary", { enum: fieldPositions }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

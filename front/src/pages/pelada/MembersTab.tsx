@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { BallRating } from "../../components/BallRating";
 import { PlayerRow } from "../../components/ui/PlayerRow";
+import { FieldPositionBadge } from "../../components/ui/FieldPositionBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorBox } from "../../components/ui/ErrorBox";
 import { fmtDateTime } from "../../utils/date";
@@ -135,6 +136,7 @@ export function MembersTab({ detail }: Props) {
                   </Group>
                 }
               >
+                <FieldPositionBadge primary={m.fieldPosition} secondary={m.fieldPositionSecondary} position={m.position} />
                 {m.role === "assistant" && (
                   <Badge color="grass" variant="light" size="xs">
                     auxiliar

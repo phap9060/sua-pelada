@@ -1,9 +1,10 @@
 import { Button, Card, Group, Stack, Text } from "@mantine/core";
 import { IconBrandWhatsapp } from "@tabler/icons-react";
 import { PlayerRow } from "../ui/PlayerRow";
+import { FieldPositionBadge } from "../ui/FieldPositionBadge";
 import { fmtTimeWithSeconds } from "../../utils/date";
 import { buildWhatsAppListMessage, whatsappShareUrl } from "../../utils/share";
-import type { GamePayload } from "../../types";
+import type { FieldPosition, GamePayload } from "../../types";
 
 interface Props {
   game: GamePayload;
@@ -15,6 +16,8 @@ interface Row {
   userId: string;
   name: string;
   position: string;
+  fieldPosition?: FieldPosition;
+  fieldPositionSecondary?: FieldPosition | null;
   confirmedAt: Date;
   pos: number;
 }
@@ -58,7 +61,9 @@ function Section({ title, count, capacity, rows }: SectionProps) {
                   </Text>
                 </Group>
               }
-            />
+            >
+              <FieldPositionBadge primary={r.fieldPosition} secondary={r.fieldPositionSecondary} position={r.position} />
+            </PlayerRow>
           ))}
         </Stack>
       )}
