@@ -15,7 +15,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconArrowDown, IconArrowUp, IconFlag, IconSearch, IconTrophy } from "@tabler/icons-react";
+import { IconArrowDown, IconArrowUp, IconFlag, IconTrophy } from "@tabler/icons-react";
 import {
   useCancelChampionship,
   useCaptainRatingRound,
@@ -49,7 +49,6 @@ export function ChampionshipConfig({ detail, champ }: Props) {
   const captainRound = useCaptainRatingRound(champ?.id);
   const [captainRoundSent, setCaptainRoundSent] = useState(false);
   const [wantsCaptainRound, setWantsCaptainRound] = useState(false);
-  const [captainFilter, setCaptainFilter] = useState("");
 
   const [name, setName] = useState(champ?.name ?? "");
   const [teamCount, setTeamCount] = useState<number>(champ?.teamCount ?? 4);
@@ -60,11 +59,6 @@ export function ChampionshipConfig({ detail, champ }: Props) {
 
   const memberOptions = detail.members.map((m) => ({ value: m.userId, label: m.name }));
   const memberNameById = new Map(detail.members.map((m) => [m.userId, m.name]));
-  const captainFilterNorm = captainFilter.trim().toLowerCase();
-  const filteredMemberOptions =
-    captainFilterNorm.length > 0
-      ? memberOptions.filter((m) => m.label.toLowerCase().includes(captainFilterNorm))
-      : memberOptions;
 
   const qualifiersOptions = powersOfTwoUpTo(teamCount).map((v) => ({ value: String(v), label: `${v} times` }));
   const captainsComplete = captainIds.length === teamCount;
@@ -196,19 +190,11 @@ export function ChampionshipConfig({ detail, champ }: Props) {
             <Text size="sm" fw={700}>
               Capitães ({captainIds.length}/{teamCount})
             </Text>
-            {!isEdit && (
-              <TextInput
-                placeholder="Digite o nome para filtrar"
-                label="Filtrar membros"
-                leftSection={<IconSearch size={15} />}
-                value={captainFilter}
-                onChange={(e) => setCaptainFilter(e.currentTarget.value)}
-              />
-            )}
             <MultiSelect
-              placeholder="Escolha um capitão por time"
-              data={filteredMemberOptions}
+              placeholder="Escolha um capitão por time (pode digitar para filtrar)"
+              data={memberOptions}
               value={captainIds}
+              searchable
               onChange={(values) => setCaptainIds(values)}
               disabled={isEdit}
               nothingFoundMessage="Nenhum membro com esse nome"
