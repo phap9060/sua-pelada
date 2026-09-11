@@ -37,6 +37,8 @@ function message(type: string, data: Record<string, unknown>): string {
       return `${data.memberName} saiu da pelada ${data.peladaName}.`;
     case "championship_created":
       return `Campeonato "${data.championshipName}" montado na pelada ${data.peladaName}! Confirme sua presença na aba Campeonato.`;
+    case "captain_rating_round":
+      return `Você foi escalado para avaliar a turma antes do draft do "${data.championshipName}". A nota atualizada vai direto para o campeonato!`;
     case "championship_draft_started":
       return `O draft do "${data.championshipName}" começou. Capitães, preparem as escolhas!`;
     case "championship_draft_finalized":
@@ -57,6 +59,7 @@ const ICONS: Record<string, React.ReactNode> = {
   removed: <IconUserMinus size={18} stroke={1.6} />,
   member_left: <IconLogout size={18} stroke={1.6} />,
   championship_created: <IconTrophy size={18} stroke={1.6} />,
+  captain_rating_round: <IconStar size={18} stroke={1.6} />,
   championship_draft_started: <IconTarget size={18} stroke={1.6} />,
   championship_draft_finalized: <IconTrophy size={18} stroke={1.6} />,
   championship_champion: <IconCrown size={18} stroke={1.6} />,

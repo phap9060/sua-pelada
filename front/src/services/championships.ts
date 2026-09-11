@@ -10,6 +10,7 @@ export const championshipsService = {
   optIn: (id: string) => unwrap(api.championships({ id }).optin.post()),
   optOut: (id: string) => unwrap(api.championships({ id }).optin.delete()),
   startDraft: (id: string) => unwrap(api.championships({ id }).draft.start.post()),
+  captainRatingRound: (id: string) => unwrap(api.championships({ id })["captain-rating-round"].post()),
   pick: (id: string, userId: string) => unwrap(api.championships({ id }).draft.pick.post({ userId })),
   undoPick: (id: string) => unwrap(api.championships({ id }).draft.undo.post()),
   finalizeDraft: (id: string) => unwrap(api.championships({ id }).draft.finalize.post()),

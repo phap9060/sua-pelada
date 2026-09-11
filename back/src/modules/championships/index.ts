@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db, executeRaw, schema } from "../../db";
 import { authed } from "../auth";
 import { getPelada, isManagerOrAssistant, isMember, memberIds } from "../../lib/guards";
@@ -9,6 +9,7 @@ import { averageRatings } from "../../lib/ratings";
 const {
   users,
   ratings,
+  ratingRequests,
   championships,
   championshipOptIns,
   championshipTeams,
@@ -49,7 +50,7 @@ async function levelMap(champ: Championship): Promise<Map<string, number>> {
   const rows = await db
     .select({ rateeId: ratings.rateeId, avg: sql<number>`avg(${ratings.stars})::float` })
     .from(ratings)
-    .where(and(eq(ratings.peladaId, champ.peladaId), inArray(ratings.raterId, captainIds)))
+    .where(and(eq(ratings.peladaId, champ.peladaId), inArray(ratings.raterId, captainIds), ne(ratings.raterId, ratings.rateeId)))
     .groupBy(ratings.rateeId);
   const captainAvg = new Map(rows.map((r) => [r.rateeId, Number(r.avg)]));
   const map = new Map<string, number>();
@@ -703,6 +704,53 @@ export const championshipsModule = new Elysia()
       }),
     }
   )
+
+  // nova rodada de avaliação restrita aos capitães: raters = capitães, ratees = todos os membros
+  .post("/championships/:id/captain-rating-round", async ({ params, user, status }) => {
+    const champ = await getChampionship(params.id);
+    if (!champ) return status(404, { message: "Campeonato não encontrado" });
+    if (!(await isManagerOrAssistant(champ.peladaId, user.id))) {
+      return status(403, { message: "Apenas o manager ou um auxiliar pode disparar a rodada" });
+    }
+    if (champ.status !== "config") return status(400, { message: "A rodada dos capitães vale antes do draft começar" });
+    if (champ.levelBasis !== "captains") {
+      return status(400, { message: "A rodada dos capitães vale quando o level usa a nota dos capitães" });
+    }
+    const pelada = await getPelada(champ.peladaId);
+    if (!pelada) return status(404, { message: "Pelada não encontrada" });
+
+    const captains = await teamCaptainIds(champ.id);
+    if (captains.length === 0) return status(400, { message: "Nenhum capitão definido" });
+    const members = await memberIds(champ.peladaId);
+
+    // zera as pendências (e completadas) dos capitães na rodada atual e recria do zero
+    await db
+      .delete(ratingRequests)
+      .where(
+        and(
+          eq(ratingRequests.peladaId, pelada.id),
+          inArray(ratingRequests.raterId, captains),
+          eq(ratingRequests.round, pelada.ratingRound)
+        )
+      );
+    const requests = captains.flatMap((raterId) =>
+      members.filter((rateeId) => rateeId !== raterId).map((rateeId) => ({ peladaId: pelada.id, raterId, rateeId, round: pelada.ratingRound }))
+    );
+    if (requests.length > 0) {
+      await db
+        .insert(ratingRequests)
+        .values(requests)
+        .onConflictDoNothing({ target: [ratingRequests.peladaId, ratingRequests.raterId, ratingRequests.rateeId, ratingRequests.round] });
+    }
+
+    await notify(captains, "captain_rating_round", {
+      peladaId: pelada.id,
+      championshipId: champ.id,
+      championshipName: champ.name,
+      round: pelada.ratingRound,
+    });
+    return championshipPayload(champ, user.id);
+  })
 
   // opt-in: membro confirma presença no campeonato (entra no pool do draft)
   .post("/championships/:id/optin", async ({ params, user, status }) => {

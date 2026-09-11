@@ -18,6 +18,7 @@ import { notifications } from "@mantine/notifications";
 import { IconArrowDown, IconArrowUp, IconFlag, IconTrophy } from "@tabler/icons-react";
 import {
   useCancelChampionship,
+  useCaptainRatingRound,
   useCreateChampionship,
   useStartDraft,
   useUpdateChampionship,
@@ -45,6 +46,8 @@ export function ChampionshipConfig({ detail, champ }: Props) {
   const update = useUpdateChampionship(champ?.id ?? "");
   const startDraft = useStartDraft(champ?.id ?? "");
   const cancel = useCancelChampionship(champ?.id ?? "");
+  const captainRound = useCaptainRatingRound(champ?.id ?? "");
+  const [captainRoundSent, setCaptainRoundSent] = useState(false);
 
   const [name, setName] = useState(champ?.name ?? "");
   const [teamCount, setTeamCount] = useState<number>(champ?.teamCount ?? 4);
@@ -217,13 +220,41 @@ export function ChampionshipConfig({ detail, champ }: Props) {
             <Radio.Group value={levelBasis} onChange={(v) => setLevelBasis(v as "pelada" | "captains")}>
               <Group gap="lg" mt={4}>
                 <Radio value="pelada" label="Média da pelada" />
-                <Radio value="captains" label="Média das bolas dos capitães" />
+                <Radio value="captains" label="Usar nota dos capitães" />
               </Group>
             </Radio.Group>
             {levelBasis === "captains" && (
-              <Text size="xs" c="dimmed">
-                Usa as notas que os capitães escolhidos já deram na pelada; sem nota, cai para a média da pelada.
-              </Text>
+              <>
+                <Text size="xs" c="dimmed">
+                  Usa as notas que os capitães escolhidos já deram na pelada; sem nota, cai para a média da pelada.
+                </Text>
+                {isEdit && champ && (
+                  <Group align="flex-start" wrap="nowrap" px="xs" py={8} style={{ borderRadius: 10, border: "1px solid var(--sp-chalk-faint)" }}>
+                    <Switch
+                      label="Nova rodada de avaliação apenas para os capitães?"
+                      description="Envia uma tarefa de avaliação só para eles; o draft já abre com as notas novas."
+                      checked={captainRoundSent}
+                      onChange={(e) => {
+                        if (e.currentTarget.checked) {
+                          captainRound.mutate(undefined, {
+                            onSuccess: () => {
+                              setCaptainRoundSent(true);
+                              notifications.show({
+                                title: "Rodada enviada aos capitães",
+                                message: "O draft vai usar as notas atualizadas deles.",
+                                color: "grass",
+                              });
+                            },
+                          });
+                        } else {
+                          setCaptainRoundSent(false);
+                        }
+                      }}
+                    />
+                  </Group>
+                )}
+                {captainRound.error != null && <ErrorBox error={captainRound.error} />}
+              </>
             )}
           </Stack>
 
