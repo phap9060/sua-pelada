@@ -437,6 +437,7 @@ async function championshipPayload(champ: Championship, viewerId: string) {
     levelBasis: champ.levelBasis,
     snakeDraft: champ.snakeDraft,
     qualifiersCount: champ.qualifiersCount,
+    captainRoundRequestedAt: champ.captainRoundRequestedAt,
     teamCount: n,
     createdAt: champ.createdAt,
     finishedAt: champ.finishedAt,
@@ -762,13 +763,20 @@ export const championshipsModule = new Elysia()
         .onConflictDoNothing({ target: [ratingRequests.peladaId, ratingRequests.raterId, ratingRequests.rateeId, ratingRequests.round] });
     }
 
+    // marca que a rodada já foi disparada (switch travado marcado na UI)
+    await db
+      .update(championships)
+      .set({ captainRoundRequestedAt: new Date() })
+      .where(eq(championships.id, champ.id));
+
     await notify(captains, "captain_rating_round", {
       peladaId: pelada.id,
       championshipId: champ.id,
       championshipName: champ.name,
       round: pelada.ratingRound,
     });
-    return championshipPayload(champ, user.id);
+    const [updated] = await db.select().from(championships).where(eq(championships.id, champ.id)).limit(1);
+    return championshipPayload(updated, user.id);
   })
 
   // opt-in: membro confirma presença no campeonato (entra no pool do draft)

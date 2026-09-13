@@ -26,6 +26,7 @@ import {
 import { PlayerDot } from "../../../components/ui/PlayerRow";
 import { ErrorBox } from "../../../components/ui/ErrorBox";
 import { ConfirmButton } from "../../../components/ui/ConfirmButton";
+import { fmtDateTime } from "../../../utils/date";
 import type { ChampionshipPayload, PeladaDetail } from "../../../types";
 
 interface Props {
@@ -250,11 +251,15 @@ export function ChampionshipConfig({ detail, champ }: Props) {
                   <Switch
                     label="Nova rodada de avaliação apenas para os capitães?"
                     description={
-                      isEdit && champ
-                        ? "Envia uma tarefa de avaliação só para eles; o draft já abre com as notas novas."
-                        : "Assim que o campeonato for criado, os capitães recebem a tarefa de avaliar a turma — o draft já abre com as notas novas."
+                      isEdit && champ?.captainRoundRequestedAt
+                        ? `Rodada enviada em ${fmtDateTime(champ.captainRoundRequestedAt)} — os capitães já receberam a tarefa.`
+                        : isEdit && champ
+                          ? "Envia uma tarefa de avaliação só para eles; o draft já abre com as notas novas."
+                          : "Assim que o campeonato for criado, os capitães recebem a tarefa de avaliar a turma — o draft já abre com as notas novas."
                     }
-                    checked={isEdit && champ ? captainRoundSent : wantsCaptainRound}
+                    // já enviada: fica travada marcada (estado vem do back)
+                    disabled={!!(isEdit && champ?.captainRoundRequestedAt)}
+                    checked={isEdit && champ ? !!champ.captainRoundRequestedAt || captainRoundSent : wantsCaptainRound}
                     onChange={(e) => {
                       const on = e.currentTarget.checked;
                       if (isEdit && champ) {

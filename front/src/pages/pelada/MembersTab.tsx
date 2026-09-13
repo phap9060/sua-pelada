@@ -12,7 +12,7 @@ import {
 } from "../../hooks/usePelada";
 import { useAuth } from "../../hooks/useAuth";
 import { BallRating } from "../../components/BallRating";
-import { PlayerRow } from "../../components/ui/PlayerRow";
+import { PlayerDot, PlayerRow } from "../../components/ui/PlayerRow";
 import { FieldPositionBadge } from "../../components/ui/FieldPositionBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorBox } from "../../components/ui/ErrorBox";
@@ -88,86 +88,107 @@ export function MembersTab() {
             ) : (
               <Stack gap={0}>
                 {orderedMembers.map((m) => (
-                  <PlayerRow
+                  <Group
                     key={m.userId}
-                    name={m.name}
-                    position={m.position}
+                    justify="space-between"
+                    wrap="nowrap"
+                    align="center"
+                    px="xs"
+                    py={7}
                     className="member-row"
-                    trailing={
-                  <Group gap="xs" wrap="nowrap">
-                    {m.userId === pelada.managerId ? (
-                      <Badge color="refletor" variant="light" size="xs">
-                        manager
-                      </Badge>
-                    ) : m.userId === myUserId ? (
-                      <ActionIcon
-                        variant="subtle"
-                        color="red"
-                        size="sm"
-                        aria-label="Sair da pelada"
-                        disabled={leave.isPending}
-                        onClick={openLeave}
-                      >
-                        <IconLogout size={16} />
-                      </ActionIcon>
-                    ) : canManage && (
-                      <Menu position="bottom-end" withArrow>
-                        <Menu.Target>
-                          <ActionIcon variant="subtle" color="gray" size="sm" aria-label={`Ações para ${m.name}`}>
-                            <IconDots size={16} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          {isManager &&
-                            (m.role === "assistant" ? (
-                              <>
-                                <Menu.Label>Cargo: auxiliar</Menu.Label>
-                                <Menu.Item
-                                  color="red"
-                                  leftSection={<IconUserMinus size={15} />}
-                                  disabled={removeAssistant.isPending}
-                                  onClick={() => removeAssistant.mutate(m.userId)}
-                                >
-                                  Remover cargo
-                                </Menu.Item>
-                              </>
-                            ) : (
-                              <Menu.Item
-                                leftSection={<IconShieldCheck size={15} />}
-                                disabled={atLimit || appoint.isPending}
-                                onClick={() => appoint.mutate(m.userId)}
-                              >
-                                {atLimit ? "Limite de 3 auxiliares atingido" : "Nomear auxiliar"}
-                              </Menu.Item>
-                            ))}
-                          <Menu.Item
-                            color="red"
-                            leftSection={<IconUserOff size={15} />}
-                            disabled={removeMember.isPending}
-                            onClick={() => setRemoveTarget(m)}
-                          >
-                            Remover da pelada
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    )}
+                    style={{ borderRadius: 10 }}
+                  >
+                    <Group gap="sm" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
+                      <PlayerDot name={m.name} position={m.position} />
+                      <Stack gap={2} style={{ minWidth: 0 }}>
+                        <Group gap="xs" wrap="nowrap">
+                          <Text truncate maw={220} size="sm" fw={600}>
+                            {m.name}
+                          </Text>
+                          {m.role === "assistant" && (
+                            <Badge color="grass" variant="light" size="xs">
+                              auxiliar
+                            </Badge>
+                          )}
+                        </Group>
+                        <Group gap={6} wrap="nowrap">
+                          <FieldPositionBadge
+                            primary={m.fieldPosition}
+                            secondary={m.fieldPositionSecondary}
+                            position={m.position}
+                          />
+                          <BallRating value={m.avgRating} readOnly size={14} fractions={2} position={m.position} />
+                          <Text c="dimmed" size="xs" className="digits">
+                            {m.avgRating.toFixed(1)}
+                          </Text>
+                        </Group>
+                      </Stack>
+                    </Group>
                     <Group gap="xs" wrap="nowrap" style={{ flex: "none" }}>
-                      <BallRating value={m.avgRating} readOnly size={16} fractions={2} position={m.position} />
-                      <Text c="dimmed" size="sm" className="digits" w={26} ta="right">
-                        {m.avgRating.toFixed(1)}
-                      </Text>
+                      {m.userId === pelada.managerId ? (
+                        <Badge color="refletor" variant="light" size="xs">
+                          manager
+                        </Badge>
+                      ) : m.userId === myUserId ? (
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          aria-label="Sair da pelada"
+                          disabled={leave.isPending}
+                          onClick={openLeave}
+                          style={{ width: 38, height: 38 }}
+                        >
+                          <IconLogout size={16} />
+                        </ActionIcon>
+                      ) : canManage ? (
+                        <Menu position="bottom-end" withArrow>
+                          <Menu.Target>
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              aria-label={`Ações para ${m.name}`}
+                              style={{ width: 38, height: 38 }}
+                            >
+                              <IconDots size={16} />
+                            </ActionIcon>
+                          </Menu.Target>
+                          <Menu.Dropdown>
+                            {isManager &&
+                              (m.role === "assistant" ? (
+                                <>
+                                  <Menu.Label>Cargo: auxiliar</Menu.Label>
+                                  <Menu.Item
+                                    color="red"
+                                    leftSection={<IconUserMinus size={15} />}
+                                    disabled={removeAssistant.isPending}
+                                    onClick={() => removeAssistant.mutate(m.userId)}
+                                  >
+                                    Remover cargo
+                                  </Menu.Item>
+                                </>
+                              ) : (
+                                <Menu.Item
+                                  leftSection={<IconShieldCheck size={15} />}
+                                  disabled={atLimit || appoint.isPending}
+                                  onClick={() => appoint.mutate(m.userId)}
+                                >
+                                  {atLimit ? "Limite de 3 auxiliares atingido" : "Nomear auxiliar"}
+                                </Menu.Item>
+                              ))}
+                            <Menu.Item
+                              color="red"
+                              leftSection={<IconUserOff size={15} />}
+                              disabled={removeMember.isPending}
+                              onClick={() => setRemoveTarget(m)}
+                            >
+                              Remover da pelada
+                            </Menu.Item>
+                          </Menu.Dropdown>
+                        </Menu>
+                      ) : null}
                     </Group>
                   </Group>
-                }
-              >
-                <FieldPositionBadge primary={m.fieldPosition} secondary={m.fieldPositionSecondary} position={m.position} />
-                {m.role === "assistant" && (
-                  <Badge color="grass" variant="light" size="xs">
-                    auxiliar
-                  </Badge>
-                )}
-              </PlayerRow>
-            ))}
+                ))}
               </Stack>
             )}
           </>

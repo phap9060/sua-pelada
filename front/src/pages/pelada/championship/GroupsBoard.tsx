@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import {
   ActionIcon,
   Badge,
+  Box,
   Button,
   Card,
   Group,
@@ -247,7 +248,8 @@ function StandingsTable({
           {champ.qualifiersCount} avançam
         </Badge>
       </Group>
-      <Table horizontalSpacing="xs" verticalSpacing={6} fz="sm">
+      <Table.ScrollContainer minWidth={420}>
+        <Table horizontalSpacing="xs" verticalSpacing={6} fz="sm">
         <Table.Thead>
           <Table.Tr>
             <Table.Th>#</Table.Th>
@@ -305,7 +307,8 @@ function StandingsTable({
             </Table.Tr>
           ))}
         </Table.Tbody>
-      </Table>
+        </Table>
+      </Table.ScrollContainer>
     </Card>
   );
 }
@@ -352,8 +355,10 @@ function MatchRow({
     <Stack gap={4}>
       <Group justify="space-between" wrap="nowrap" px="xs" py={4} style={{ borderRadius: 10, background: hasResult ? "rgba(232,242,234,0.05)" : undefined }}>
         <Group gap="sm" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
-          <PlayerDot name={home?.name ?? "?"} />
-          <Text size="sm" fw={700} truncate maw={140}>
+          <Box visibleFrom="sm" style={{ display: "inline-flex", flex: "none" }}>
+            <PlayerDot name={home?.name ?? "?"} />
+          </Box>
+          <Text size="sm" fw={700} truncate maw={{ base: 110, sm: 140 }}>
             {home?.name ?? "?"}
           </Text>
           <Text className="digits" fw={800} size="md">
@@ -365,10 +370,12 @@ function MatchRow({
           <Text className="digits" fw={800} size="md">
             {match.awayScore ?? "-"}
           </Text>
-          <Text size="sm" fw={700} truncate maw={140}>
+          <Text size="sm" fw={700} truncate maw={{ base: 110, sm: 140 }}>
             {away?.name ?? "?"}
           </Text>
-          <PlayerDot name={away?.name ?? "?"} />
+          <Box visibleFrom="sm" style={{ display: "inline-flex", flex: "none" }}>
+            <PlayerDot name={away?.name ?? "?"} />
+          </Box>
           {match.homePenalties !== null && match.awayPenalties !== null && (
             <Badge size="xs" variant="light" color="terra">
               pên. {match.homePenalties}-{match.awayPenalties}

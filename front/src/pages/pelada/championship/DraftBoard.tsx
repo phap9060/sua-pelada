@@ -33,7 +33,8 @@ export function DraftBoard({ champ, canManage, myUserId }: Props) {
     <Stack gap="md">
       <TurnBanner champ={champ} isMyTurn={!!isMyTurn} canManage={canManage} />
 
-      <Group align="flex-start" gap="md" wrap="nowrap" style={{ overflowX: "auto" }}>
+      {/* no mobile os cards empilham; a partir de ~600px ficam lado a lado */}
+      <Group align="flex-start" gap="md">
         <Card shadow="sm" padding="lg" radius="lg" withBorder style={{ flex: 1, minWidth: 280 }}>
           <Group gap="xs" mb="sm">
             <IconTarget size={18} stroke={1.8} style={{ color: "var(--mantine-color-grass-5)" }} />

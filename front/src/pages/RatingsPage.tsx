@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ActionIcon, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { ActionIcon, Box, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { IconChevronLeft, IconChevronRight, IconStar } from "@tabler/icons-react";
 import { useCompleteRating, usePendingRatings } from "../hooks/useRatings";
 import { BallRating } from "../components/BallRating";
@@ -14,6 +15,8 @@ export function RatingsPage() {
   const [done, setDone] = useState(0);
   const [cursor, setCursor] = useState(0);
   const complete = useCompleteRating();
+  // em telas pequenas a carta usa o espaço todo e as bolas encolhem para caber
+  const isMobile = useMediaQuery("(max-width: 30em)");
 
   if (isLoading) return <CardSkeleton lines={3} />;
   if (isError) return <ErrorBox error={error} />;
@@ -87,19 +90,16 @@ export function RatingsPage() {
             ))}
           </Group>
 
-          <Group align="center" gap="sm" wrap="nowrap">
-            <ActionIcon
-              size="lg"
-              radius="xl"
-              variant="default"
-              disabled={safeCursor === 0}
-              onClick={() => setCursor(safeCursor - 1)}
-              aria-label="Jogador anterior"
+          {/* carta em cheio com as setas flutuando sobre as laterais */}
+          <Box pos="relative">
+            <Card
+              key={r.requestId}
+              shadow="sm"
+              p={{ base: "md", sm: "xl" }}
+              radius="lg"
+              withBorder
+              className={`rating-card-enter${isMobile ? " rating-card-live" : ""}`}
             >
-              <IconChevronLeft size={20} stroke={2} />
-            </ActionIcon>
-
-            <Card key={r.requestId} shadow="sm" padding="xl" radius="lg" withBorder className="rating-card-enter" style={{ flex: 1, minWidth: 0 }}>
               <Stack align="center" gap="md">
                 <PlayerDot name={r.rateeName} position={r.rateePosition} />
                 <Stack gap={2} ta="center">
@@ -114,7 +114,7 @@ export function RatingsPage() {
                 <BallRating
                   value={stars[r.requestId] ?? 0}
                   onChange={(v) => setStars((s) => ({ ...s, [r.requestId]: v }))}
-                  size={46}
+                  size={isMobile ? 36 : 46}
                   position={r.rateePosition}
                 />
 
@@ -139,16 +139,47 @@ export function RatingsPage() {
             </Card>
 
             <ActionIcon
+              variant="default"
               size="lg"
               radius="xl"
+              disabled={safeCursor === 0}
+              onClick={() => setCursor(safeCursor - 1)}
+              aria-label="Jogador anterior"
+              style={{
+                position: "absolute",
+                top: "50%",
+                transform: "translateY(-50%)",
+                left: 8,
+                zIndex: 5,
+                background: "rgba(15,32,22,0.72)",
+                backdropFilter: "blur(4px)",
+                border: "1px solid var(--sp-chalk-faint)",
+              }}
+            >
+              <IconChevronLeft size={20} stroke={2} />
+            </ActionIcon>
+
+            <ActionIcon
               variant="default"
+              size="lg"
+              radius="xl"
               disabled={safeCursor >= itemsCount - 1}
               onClick={() => setCursor(safeCursor + 1)}
               aria-label="Próximo jogador"
+              style={{
+                position: "absolute",
+                top: "50%",
+                transform: "translateY(-50%)",
+                right: 8,
+                zIndex: 5,
+                background: "rgba(15,32,22,0.72)",
+                backdropFilter: "blur(4px)",
+                border: "1px solid var(--sp-chalk-faint)",
+              }}
             >
               <IconChevronRight size={20} stroke={2} />
             </ActionIcon>
-          </Group>
+          </Box>
         </>
       )}
     </Stack>

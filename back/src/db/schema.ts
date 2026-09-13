@@ -264,6 +264,8 @@ export const championships = pgTable(
     snakeDraft: boolean("snake_draft").notNull().default(true),
     // quantos times passam para o mata-mata (potência de 2, entre 2 e N-2)
     qualifiersCount: integer("qualifiers_count").notNull().default(2),
+    // rodada de avaliação dos capitães já foi disparada (switch fica travado marcado)
+    captainRoundRequestedAt: timestamp("captain_round_requested_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),

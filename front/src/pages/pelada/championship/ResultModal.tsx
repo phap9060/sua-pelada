@@ -124,18 +124,19 @@ export function ResultModal({ championshipId, match, home, away, opened, onClose
           <Text size="sm" fw={700}>
             Eventos do jogo
           </Text>
-          <Group gap="xs" wrap="nowrap">
-            <Select
-              placeholder="Jogador"
-              data={players}
-              value={pickerUser}
-              onChange={setPickerUser}
-              searchable
-              style={{ flex: 1 }}
-            />
+          {/* empilhado: jogador na linha de cima, tipo + adicionar na de baixo */}
+          <Select
+            placeholder="Jogador"
+            data={players}
+            value={pickerUser}
+            onChange={setPickerUser}
+            searchable
+          />
+          <Group gap="xs" wrap="nowrap" align="center">
             <SegmentedControl
               value={pickerType}
               onChange={(v) => setPickerType(v as EventType)}
+              style={{ flex: 1 }}
               data={[
                 { value: "goal", label: "Gol" },
                 { value: "assist", label: "Assist." },
