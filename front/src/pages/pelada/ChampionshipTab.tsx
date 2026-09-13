@@ -93,11 +93,10 @@ export function ChampionshipTab() {
       {!champ && canManage && creating && <ChampionshipConfig detail={detail} champ={null} />}
 
       {champ?.status === "config" && (
-        canManage ? (
-          <ChampionshipConfig detail={detail} champ={champ} />
-        ) : (
+        <>
           <MemberOptIn champ={champ} />
-        )
+          {canManage && <ChampionshipConfig detail={detail} champ={champ} />}
+        </>
       )}
 
       {champ?.status === "drafting" && <DraftBoard champ={champ} canManage={canManage} myUserId={myUserId} />}
@@ -159,6 +158,27 @@ export function ChampionshipTab() {
 function MemberOptIn({ champ }: { champ: ChampionshipPayload }) {
   const optIn = useChampionshipOptIn(champ.id, champ.peladaId);
   const count = champ.pool.filter((p) => !p.picked).length;
+  const captainTeam = champ.viewer.captainOfTeamId
+    ? champ.teams.find((t) => t.id === champ.viewer.captainOfTeamId)
+    : null;
+
+  // capitães já entram automaticamente no próprio time — não precisam confirmar
+  if (captainTeam) {
+    return (
+      <Card shadow="sm" padding="xl" radius="lg" withBorder>
+        <Stack align="center" gap="sm" py="sm">
+          <IconUserCheck size={36} stroke={1.4} style={{ color: "var(--mantine-color-refletor-5)" }} />
+          <Text fw={700} size="lg" ta="center">
+            Você é capitão do {captainTeam.name}!
+          </Text>
+          <Text c="dimmed" size="sm" ta="center">
+            Lugar garantido: você entra automaticamente no próprio time quando o draft começar.
+          </Text>
+        </Stack>
+      </Card>
+    );
+  }
+
   return (
     <Card shadow="sm" padding="xl" radius="lg" withBorder>
       <Stack align="center" gap="sm" py="sm">
