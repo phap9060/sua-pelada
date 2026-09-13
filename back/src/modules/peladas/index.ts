@@ -278,6 +278,39 @@ export const peladasModule = new Elysia()
     return { ok: true };
   })
 
+  // manager/auxiliar reseta a senha de um membro: senha fica pelada e a conta cria uma nova no próximo login
+  .post(
+    "/peladas/:id/members/:userId/reset-password",
+    async ({ params, user, status }) => {
+      const pelada = await getPelada(params.id);
+      if (!pelada) return status(404, { message: "Pelada não encontrada" });
+      if (!(await isManagerOrAssistant(pelada.id, user.id)))
+        return status(403, { message: "Apenas o manager ou um auxiliar pode resetar a senha" });
+      if (params.userId === user.id) return status(400, { message: "Use 'Sua senha' para trocar a própria senha" });
+      if (!(await isMember(pelada.id, params.userId))) return status(404, { message: "Este jogador não é membro desta pelada" });
+
+      // hierarquia: manager reseta qualquer um menos ele mesmo; auxiliar só reseta membros comuns
+      const [peladaRow] = await db.select({ managerId: peladas.managerId }).from(peladas).where(eq(peladas.id, pelada.id)).limit(1);
+      const isManager = peladaRow?.managerId === user.id;
+      if (!isManager) {
+        const isAssistant = await isManagerOrAssistant(pelada.id, params.userId);
+        if (isAssistant) return status(403, { message: "Auxiliares só podem resetar a senha de membros comuns" });
+      }
+
+      const [target] = await db.select({ name: users.name }).from(users).where(eq(users.id, params.userId)).limit(1);
+      // hash descartável: a senha antiga deixa de valer em qualquer lugar
+      const randomHash = await Bun.password.hash(crypto.randomUUID(), { algorithm: "bcrypt", cost: 10 });
+      await db
+        .update(users)
+        .set({ passwordHash: randomHash, mustResetPassword: true })
+        .where(eq(users.id, params.userId));
+
+      await notify([params.userId], "password_reset", { peladaId: pelada.id, peladaName: pelada.name });
+      return { ok: true, name: target?.name ?? "Jogador" };
+    },
+    { params: t.Object({ id: t.String(), userId: t.String() }) }
+  )
+
   // o próprio jogador sai da pelada
   .delete("/peladas/:id/leave", async ({ params, user, status }) => {
     const pelada = await getPelada(params.id);

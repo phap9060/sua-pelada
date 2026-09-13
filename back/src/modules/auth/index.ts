@@ -94,6 +94,18 @@ export const authModule = new Elysia({ prefix: "/auth" })
     async ({ body, jwt, cookie, status }) => {
       const email = body.email.toLowerCase().trim();
       const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      // senha pelada (resetada pela organização): entra com o e-mail e cria uma nova no modal
+      if (user && user.mustResetPassword) {
+        cookie.auth_token.set({
+          value: await jwt.sign({ sub: user.id }),
+          httpOnly: true,
+          sameSite: isProd ? "none" : "lax",
+          secure: isProd,
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60,
+        });
+        return { ...publicUser(user), needsPasswordReset: true };
+      }
       const ok = user && (await Bun.password.verify(body.password, user.passwordHash));
       if (!ok) return status(401, { message: "E-mail ou senha inválidos" });
       cookie.auth_token.set({
@@ -114,6 +126,28 @@ export const authModule = new Elysia({ prefix: "/auth" })
   })
   .use(authed)
   .get("/me", async ({ user }) => ({ ...publicUser(user), selfRating: await latestSelfRating(user.id) }))
+
+  // cria a senha nova de uma conta com senha pelada (resetada pela organização)
+  .post(
+    "/password",
+    async ({ body, user, status }) => {
+      if (!user.mustResetPassword) return status(400, { message: "Não há reset de senha pendente" });
+      if (body.password !== body.confirm) return status(400, { message: "As senhas não conferem" });
+      const hash = await Bun.password.hash(body.password, { algorithm: "bcrypt", cost: 10 });
+      await db
+        .update(users)
+        .set({ passwordHash: hash, mustResetPassword: false })
+        .where(eq(users.id, user.id));
+      return { ...publicUser({ ...user, mustResetPassword: false }), selfRating: await latestSelfRating(user.id) };
+    },
+    {
+      body: t.Object({
+        password: t.String({ minLength: 6, maxLength: 72 }),
+        confirm: t.String({ minLength: 6, maxLength: 72 }),
+      }),
+    }
+  )
+
   // usuário troca a própria posição (linha/goleiro); não zera as notas
   .patch(
     "/position",

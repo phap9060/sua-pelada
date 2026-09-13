@@ -70,6 +70,21 @@ export function useRemoveMember(peladaId: string) {
   });
 }
 
+export function useResetMemberPassword(peladaId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => peladasService.resetPassword(peladaId, userId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: peladaKey(peladaId) });
+      notifications.show({
+        title: "Senha resetada",
+        message: `${data.name} cria uma nova senha ao entrar na próxima vez.`,
+        color: "yellow",
+      });
+    },
+  });
+}
+
 export function useLeavePelada(peladaId: string) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();

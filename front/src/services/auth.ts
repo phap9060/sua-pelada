@@ -9,6 +9,7 @@ export const authService = {
   logout: () => unwrap(api.auth.logout.post()),
   me: () => unwrap(api.auth.me.get()),
   updatePosition: (position: PlayerPosition) => unwrap(api.auth.position.patch({ position })),
+  setPassword: (body: { password: string; confirm: string }) => unwrap(api.auth.password.post(body)),
   updateProfile: (body: {
     name?: string;
     position?: PlayerPosition;

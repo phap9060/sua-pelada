@@ -25,6 +25,8 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   // tag que libera gerenciar uma pelada (futuro: assinatura paga)
   canManage: boolean("can_manage").notNull().default(false),
+  // senha resetada pela organização: no próximo login a pessoa cria uma nova
+  mustResetPassword: boolean("must_reset_password").notNull().default(false),
   // linha ou goleiro (alterável pelo próprio usuário; não zera as notas)
   position: text("position", { enum: playerPosition }).notNull().default("line"),
   // posição preferencial em campo (só faz sentido na linha); nasce meia

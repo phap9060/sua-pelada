@@ -5,6 +5,7 @@ import {
   IconBellOff,
   IconBolt,
   IconCrown,
+  IconLockOpen,
   IconLogout,
   IconMail,
   IconStar,
@@ -35,6 +36,8 @@ function message(type: string, data: Record<string, unknown>): string {
       return `Você foi removido da pelada ${data.peladaName}. Pode voltar pelo link de convite quando quiser.`;
     case "member_left":
       return `${data.memberName} saiu da pelada ${data.peladaName}.`;
+    case "password_reset":
+      return `Sua senha foi resetada. Entre com seu e-mail e crie uma nova senha.`;
     case "championship_created":
       return `Campeonato "${data.championshipName}" montado na pelada ${data.peladaName}! Confirme sua presença na aba Campeonato.`;
     case "captain_rating_round":
@@ -58,6 +61,7 @@ const ICONS: Record<string, React.ReactNode> = {
   assistant: <IconCrown size={18} stroke={1.6} />,
   removed: <IconUserMinus size={18} stroke={1.6} />,
   member_left: <IconLogout size={18} stroke={1.6} />,
+  password_reset: <IconLockOpen size={18} stroke={1.6} />,
   championship_created: <IconTrophy size={18} stroke={1.6} />,
   captain_rating_round: <IconStar size={18} stroke={1.6} />,
   championship_draft_started: <IconTarget size={18} stroke={1.6} />,

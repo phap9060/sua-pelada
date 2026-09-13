@@ -13,5 +13,6 @@ export const peladasService = {
   appointAssistant: (id: string, userId: string) => unwrap(api.peladas({ id }).assistants.post({ userId })),
   removeAssistant: (id: string, userId: string) => unwrap(api.peladas({ id }).assistants({ userId }).delete()),
   removeMember: (id: string, userId: string) => unwrap(api.peladas({ id }).members({ userId }).delete()),
+  resetPassword: (id: string, userId: string) => unwrap(api.peladas({ id }).members({ userId })["reset-password"].post()),
   leave: (id: string) => unwrap(api.peladas({ id }).leave.delete()),
 };

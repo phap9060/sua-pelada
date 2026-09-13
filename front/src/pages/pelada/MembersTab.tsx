@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Badge, Button, Card, CopyButton, Group, Menu, Modal, Stack, Text, TextInput, Title, ActionIcon } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useOutletContext } from "react-router-dom";
-import { IconCheck, IconCopy, IconDots, IconLogout, IconSearch, IconShieldCheck, IconUserMinus, IconUserOff } from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconDots, IconLockOpen, IconLogout, IconSearch, IconShieldCheck, IconUserMinus, IconUserOff } from "@tabler/icons-react";
 import {
   useAppointAssistant,
   useLeavePelada,
   useRemoveAssistant,
   useRemoveMember,
+  useResetMemberPassword,
   useTriggerRatingRound,
 } from "../../hooks/usePelada";
 import { useAuth } from "../../hooks/useAuth";
@@ -30,6 +31,7 @@ export function MembersTab() {
   const appoint = useAppointAssistant(pelada.id);
   const removeAssistant = useRemoveAssistant(pelada.id);
   const removeMember = useRemoveMember(pelada.id);
+  const resetPassword = useResetMemberPassword(pelada.id);
   const leave = useLeavePelada(pelada.id);
   const isManager = myRole === "manager";
   const canManage = myRole !== "member";
@@ -37,6 +39,7 @@ export function MembersTab() {
   const [confirmOpen, { open: openConfirm, close: closeConfirm }] = useDisclosure(false);
   const [leaveOpen, { open: openLeave, close: closeLeave }] = useDisclosure(false);
   const [removeTarget, setRemoveTarget] = useState<(typeof members)[number] | null>(null);
+  const [resetTarget, setResetTarget] = useState<(typeof members)[number] | null>(null);
   const [filter, setFilter] = useState("");
 
   const assistantCount = members.filter((m) => m.role === "assistant").length;
@@ -62,6 +65,11 @@ export function MembersTab() {
     if (!removeTarget) return;
     removeMember.mutate(removeTarget.userId);
     setRemoveTarget(null);
+  };
+
+  const confirmReset = () => {
+    if (!resetTarget) return;
+    resetPassword.mutate(resetTarget.userId, { onSuccess: () => setResetTarget(null) });
   };
 
   return (
@@ -175,6 +183,15 @@ export function MembersTab() {
                                   {atLimit ? "Limite de 3 auxiliares atingido" : "Nomear auxiliar"}
                                 </Menu.Item>
                               ))}
+                            {(isManager || m.role === "member") && (
+                              <Menu.Item
+                                leftSection={<IconLockOpen size={15} />}
+                                disabled={resetPassword.isPending}
+                                onClick={() => setResetTarget(m)}
+                              >
+                                Resetar senha
+                              </Menu.Item>
+                            )}
                             <Menu.Item
                               color="red"
                               leftSection={<IconUserOff size={15} />}
@@ -305,6 +322,26 @@ export function MembersTab() {
             </Button>
             <Button color="red" loading={removeMember.isPending} onClick={confirmRemove}>
               Remover da pelada
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal opened={!!resetTarget} onClose={() => setResetTarget(null)} title={`Resetar a senha de ${resetTarget?.name ?? ""}?`} centered>
+        <Stack gap="md">
+          <Text size="sm">
+            A senha atual de <b>{resetTarget?.name}</b> fica pelada: ela deixa de funcionar em qualquer lugar.
+          </Text>
+          <Text size="sm" c="dimmed">
+            No próximo login, a conta pede uma senha nova.
+          </Text>
+          {resetPassword.error != null && <ErrorBox error={resetPassword.error} />}
+          <Group justify="flex-end" gap="sm">
+            <Button variant="light" color="gray" onClick={() => setResetTarget(null)}>
+              Cancelar
+            </Button>
+            <Button color="red" loading={resetPassword.isPending} onClick={confirmReset}>
+              Resetar senha
             </Button>
           </Group>
         </Stack>
