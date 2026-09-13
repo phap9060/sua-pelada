@@ -249,7 +249,7 @@ export function ChampionshipConfig({ detail, champ }: Props) {
                 </Text>
                 <Group align="flex-start" wrap="nowrap" px="xs" py={8} style={{ borderRadius: 10, border: "1px solid var(--sp-chalk-faint)" }}>
                   <Switch
-                    label="Nova rodada de avaliação apenas para os capitães?"
+                    label="Nova rodada de avaliação apenas para capitães?"
                     description={
                       isEdit && champ?.captainRoundRequestedAt
                         ? `Rodada enviada em ${fmtDateTime(champ.captainRoundRequestedAt)} — os capitães já receberam a tarefa.`
