@@ -39,7 +39,7 @@ export function GameHero({ game, peladaId, peladaName }: GameHeroProps) {
   const pct = total > 0 ? (confirmed / total) * 100 : 0;
 
   return (
-    <Card withBorder padding="xl" className={game.status === "drawn" ? "" : undefined}>
+    <Card withBorder p={{ base: "md", sm: "xl" }} className={game.status === "drawn" ? "" : undefined}>
       <Stack gap="lg">
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Box style={{ minWidth: 0 }}>
@@ -59,19 +59,26 @@ export function GameHero({ game, peladaId, peladaName }: GameHeroProps) {
           <StatusChip chip={gameChip(game, now)} />
         </Group>
 
-        <Group justify="space-between" align="flex-end" gap="md" wrap="nowrap">
-          <Text className="digits" fz={{ base: 38, sm: 46 }} lh={1} c="dark.0">
+        {/* data e countdown: lado a lado no desktop; empilham no mobile */}
+        <Group justify="space-between" align="flex-end" gap="md" wrap="wrap">
+          <Text className="digits" fz={{ base: 32, sm: 46 }} lh={1} c="dark.0">
             {new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })
               .format(new Date(game.gameAt))
               .replace(".", "")}
             <Text component="span" fz={26} c="dimmed" mx={6}>
               ·
             </Text>
-            <Text component="span" fz={{ base: 30, sm: 36 }} c="grass.4">
+            <Text component="span" fz={{ base: 26, sm: 36 }} c="grass.4">
               {new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(game.gameAt))}
             </Text>
           </Text>
-          <Text className={`digits${isOpen ? " countdown-live" : ""}`} fz={{ base: 18, sm: 22 }} c={isOpen ? "grass.4" : "dimmed"} ta="right">
+          <Text
+            className={`digits${isOpen ? " countdown-live" : ""}`}
+            fz={{ base: 18, sm: 22 }}
+            c={isOpen ? "grass.4" : "dimmed"}
+            ta="right"
+            style={{ marginLeft: "auto" }}
+          >
             {countdown}
           </Text>
         </Group>

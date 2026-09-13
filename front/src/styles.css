@@ -411,6 +411,30 @@ body {
   }
 }
 
+/* ---- respiro no mobile: timeline e botão gigante ---- */
+@media (max-width: 30em) {
+  .sp-tl-node {
+    width: 84px;
+  }
+  .sp-tl-time {
+    font-size: 13px;
+  }
+  .sp-tl-node[data-state="active"] .sp-tl-time {
+    font-size: 15px;
+  }
+  .sp-tl-label {
+    letter-spacing: 0.05em;
+  }
+  .big-red-wrap {
+    padding: 12px 0;
+  }
+  .big-red {
+    width: 196px;
+    height: 196px;
+    border-width: 7px;
+  }
+}
+
 /* foco visível em tudo que é interativo */
 :focus-visible {
   outline: 2px solid var(--sp-grass);
