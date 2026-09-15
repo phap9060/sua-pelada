@@ -1,4 +1,4 @@
-import { Badge, Button, Card, Group, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Badge, Button, Card, Group, SimpleGrid, Stack, Text, ActionIcon } from "@mantine/core";
 import { IconCrown, IconBrandWhatsapp } from "@tabler/icons-react";
 import { GloveIcon } from "../GloveIcon";
 import { PlayerRow } from "../ui/PlayerRow";
@@ -12,6 +12,8 @@ interface Props {
   peladaName: string;
   canCrown: boolean;
   onCrown: (teamId: string) => void;
+  /** média de bolas de cada membro (para a pontuação média do time) */
+  avgByUser?: Map<string, number>;
 }
 
 /** Cores de kit por posição na mesa — cada time com sua camisa. */
@@ -25,13 +27,23 @@ const KITS = [
 const kitOf = (i: number) => KITS[i % KITS.length];
 
 /** Times sorteados apresentados como camisas penduradas + consagração do campeão. */
-export function TeamsGrid({ game, peladaId, peladaName, canCrown, onCrown }: Props) {
+export function TeamsGrid({ game, peladaId, peladaName, canCrown, onCrown, avgByUser }: Props) {
   const canCrownNow = canCrown && game.status === "drawn";
 
   const shareWhatsApp = () => {
     const appUrl = `${window.location.origin}/peladas/${peladaId}`;
     window.open(whatsappShareUrl(buildWhatsAppTeamsMessage(game, peladaName, appUrl)), "_blank");
   };
+
+  // pontuação média do time: média de bolas dos membros + nota dos convidados
+  const teamAvg = (t: GamePayload["teams"][number]) => {
+    const vals = t.players
+      .map((p) => (p.isExternal ? p.rating : (avgByUser?.get(p.id) ?? null)))
+      .filter((v): v is number => v != null);
+    if (vals.length === 0) return null;
+    return vals.reduce((acc, v) => acc + v, 0) / vals.length;
+  };
+  const fmtAvg = (v: number) => `⌀ ${v.toFixed(1).replace(".", ",")}`;
 
   return (
     <Stack gap="sm">
@@ -46,11 +58,23 @@ export function TeamsGrid({ game, peladaId, peladaName, canCrown, onCrown }: Pro
             size="compact-sm"
             leftSection={<IconBrandWhatsapp size={15} />}
             onClick={shareWhatsApp}
+            visibleFrom="sm"
           >
             WhatsApp
           </Button>
+          {/* mobile: só o símbolo */}
+          <ActionIcon
+            variant="light"
+            color="grass"
+            size="lg"
+            onClick={shareWhatsApp}
+            aria-label="Compartilhar no WhatsApp"
+            hiddenFrom="sm"
+          >
+            <IconBrandWhatsapp size={18} />
+          </ActionIcon>
           {canCrownNow && (
-            <Text c="dimmed" size="xs" ta="right" maw={220}>
+            <Text c="dimmed" size="xs" ta="right" maw={220} visibleFrom="sm">
               Ao fim do dia, consagre o time que mais ganhou.
             </Text>
           )}
@@ -96,6 +120,17 @@ export function TeamsGrid({ game, peladaId, peladaName, canCrown, onCrown }: Pro
                   <Text fw={800} fz="lg">
                     {t.name}
                   </Text>
+                  {teamAvg(t) != null && (
+                    <Text
+                      className="digits"
+                      size="sm"
+                      c="dimmed"
+                      title="Pontuação média do time"
+                      style={{ flexShrink: 0 }}
+                    >
+                      {fmtAvg(teamAvg(t)!)}
+                    </Text>
+                  )}
                 </Group>
                 {isChampion && (
                   <Group gap={4} wrap="nowrap">

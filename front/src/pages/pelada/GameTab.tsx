@@ -1,5 +1,6 @@
 import { Badge, Button, Card, Group, Stack, Text } from "@mantine/core";
 import { IconCrown } from "@tabler/icons-react";
+import { useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useNow } from "../../hooks/useNow";
 import {
@@ -34,6 +35,7 @@ export function GameTab() {
   const crownKeeper = useCrownGoalkeeper(peladaId);
   const saveEntries = useSaveEntries(peladaId);
   const drawTeams = useDrawTeams(peladaId);
+  const avgByUser = useMemo(() => new Map(detail.members.map((m) => [m.userId, m.avgRating])), [detail.members]);
 
   if (isLoading) return <Loading />;
   if (isError) return <ErrorBox error={error} />;
@@ -67,7 +69,7 @@ export function GameTab() {
         />
 
         {showTeams && (
-          <TeamsGrid game={game} peladaId={peladaId} peladaName={peladaName} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
+          <TeamsGrid game={game} peladaId={peladaId} peladaName={peladaName} canCrown={canManage} avgByUser={avgByUser} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
         )}
 
         {showTeams && game.rotatingGoalkeepers.length > 0 && <RotatingKeepersCard game={game} />}
@@ -92,7 +94,7 @@ export function GameTab() {
       <ConfirmationList game={game} peladaId={peladaId} peladaName={peladaName} />
 
       {showTeams && (
-        <TeamsGrid game={game} peladaId={peladaId} peladaName={peladaName} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
+        <TeamsGrid game={game} peladaId={peladaId} peladaName={peladaName} canCrown={canManage} avgByUser={avgByUser} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
       )}
 
       {showTeams && game.rotatingGoalkeepers.length > 0 && <RotatingKeepersCard game={game} />}
