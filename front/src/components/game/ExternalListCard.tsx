@@ -51,10 +51,14 @@ export function ExternalListCard({ game, members, canEdit, onSave, onDraw, isSav
 
   const usedUserIds = new Set([...draft.line, ...draft.keepers].map((e) => e.userId).filter(Boolean));
   const availableMembers = members.filter((m) => !usedUserIds.has(m.userId));
-  const memberOptions = availableMembers.map((m) => ({
-    value: m.userId,
-    label: `${m.name} · média ${m.avgRating.toFixed(1).replace(".", ",")}`,
-  }));
+  // goleiros: só quem é goleiro; linha: todos os demais membros
+  const optionsFor = (group: "line" | "keepers") =>
+    availableMembers
+      .filter((m) => (group === "keepers" ? m.position === "keeper" : true))
+      .map((m) => ({
+        value: m.userId,
+        label: `${m.name} · média ${m.avgRating.toFixed(1).replace(".", ",")}`,
+      }));
 
   // quando não é editável, mostra o que está salvo no servidor
   const serverView = useMemo(
@@ -186,12 +190,12 @@ export function ExternalListCard({ game, members, canEdit, onSave, onDraw, isSav
               <Stack gap={6} mt="sm" px="xs">
                 <Group gap={6} wrap="nowrap" align="flex-end">
                   <Select
-                    placeholder="Buscar membro…"
-                    data={memberOptions}
+                    placeholder={group === "keepers" ? "Buscar goleiro…" : "Buscar membro…"}
+                    data={optionsFor(group)}
                     value={group === "line" ? memberLine : memberKeeper}
                     onChange={(x) => (group === "line" ? setMemberLine : setMemberKeeper)(x)}
                     searchable
-                    nothingFoundMessage="Ninguém encontrado"
+                    nothingFoundMessage={group === "keepers" ? "Nenhum goleiro na pelada" : "Ninguém encontrado"}
                     flex={1}
                     size="sm"
                   />
