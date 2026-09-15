@@ -2,10 +2,19 @@ import { Badge, Button, Card, Group, Stack, Text } from "@mantine/core";
 import { IconCrown } from "@tabler/icons-react";
 import { useOutletContext } from "react-router-dom";
 import { useNow } from "../../hooks/useNow";
-import { useCancelConfirmation, useConfirmGame, useCrownChampion, useCrownGoalkeeper, useGame } from "../../hooks/useGame";
+import {
+  useCancelConfirmation,
+  useConfirmGame,
+  useCrownChampion,
+  useCrownGoalkeeper,
+  useDrawTeams,
+  useGame,
+  useSaveEntries,
+} from "../../hooks/useGame";
 import { GameHero } from "../../components/game/GameHero";
 import { ConfirmationList } from "../../components/game/ConfirmationList";
 import { TeamsGrid } from "../../components/game/TeamsGrid";
+import { ExternalListCard } from "../../components/game/ExternalListCard";
 import { GloveIcon } from "../../components/GloveIcon";
 import { PlayerRow } from "../../components/ui/PlayerRow";
 import { ErrorBox } from "../../components/ui/ErrorBox";
@@ -23,6 +32,8 @@ export function GameTab() {
   const cancel = useCancelConfirmation(peladaId);
   const crown = useCrownChampion(peladaId);
   const crownKeeper = useCrownGoalkeeper(peladaId);
+  const saveEntries = useSaveEntries(peladaId);
+  const drawTeams = useDrawTeams(peladaId);
 
   if (isLoading) return <Loading />;
   if (isError) return <ErrorBox error={error} />;
@@ -31,6 +42,48 @@ export function GameTab() {
   const showTeams = (game.status === "drawn" || game.status === "finished") && game.teams.length > 0;
   const canCrownKeeper =
     canManage && (game.status === "drawn" || game.status === "finished") && game.goalkeepers.length > 0 && !game.championGoalkeeper;
+
+  if (game.useExternalList) {
+    const canEdit = canManage && (game.status === "scheduled" || game.status === "open");
+    return (
+      <Stack gap="md">
+        <GameHero game={game} peladaId={peladaId} peladaName={peladaName} />
+
+        {canEdit && game.entries.length === 0 && (
+          <Text c="dimmed" size="sm">
+            Monte a lista de quem vai jogar e clique em “Sortear times”.
+          </Text>
+        )}
+
+        <ExternalListCard
+          game={game}
+          members={detail.members}
+          canEdit={canEdit}
+          onSave={(line, keepers) => saveEntries.mutate({ gameId: game.id, line, keepers })}
+          onDraw={() => drawTeams.mutate(game.id)}
+          isSaving={saveEntries.isPending}
+          isDrawing={drawTeams.isPending}
+          error={saveEntries.error ?? drawTeams.error}
+        />
+
+        {showTeams && (
+          <TeamsGrid game={game} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
+        )}
+
+        {showTeams && game.rotatingGoalkeepers.length > 0 && <RotatingKeepersCard game={game} />}
+
+        {showTeams && game.goalkeepers.length > 0 && (
+          <ChampionKeeperCard
+            game={game}
+            canCrown={canCrownKeeper}
+            onCrown={(userId) => crownKeeper.mutate({ gameId: game.id, userId })}
+            isPending={crownKeeper.isPending}
+            error={crownKeeper.error}
+          />
+        )}
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="md">
@@ -68,11 +121,11 @@ function RotatingKeepersCard({ game }: { game: GamePayload }) {
         </Text>
       </Group>
       <Text c="dimmed" size="sm" mb="sm">
-        Menos goleiros que times: eles rodam entre as partidas, na ordem de confirmação.
+        Menos goleiros que times: eles rodam entre as partidas, na ordem da lista.
       </Text>
       <Stack gap={4}>
         {game.rotatingGoalkeepers.map((g, i) => (
-          <PlayerRow key={g.userId} name={g.name} position="keeper" order={`${i + 1}º`} />
+          <PlayerRow key={g.entryId ?? g.userId ?? i} name={g.name} position="keeper" order={`${i + 1}º`} />
         ))}
       </Stack>
     </Card>
@@ -116,24 +169,24 @@ function ChampionKeeperCard({ game, canCrown, onCrown, isPending, error }: Champ
         <Stack gap={4}>
           {game.goalkeepers.map((g) => (
             <PlayerRow
-              key={g.userId}
+              key={g.entryId ?? g.userId}
               name={g.name}
               position="keeper"
               trailing={
-                <Button variant="light" color="refletor" size="compact-xs" loading={isPending} onClick={() => onCrown(g.userId)}>
-                  Consagrar
-                </Button>
+                g.userId ? (
+                  <Button variant="light" color="refletor" size="compact-xs" loading={isPending} onClick={() => onCrown(g.userId!)}>
+                    Consagrar
+                  </Button>
+                ) : (
+                  <Badge size="xs" variant="light" c="dimmed">
+                    convidado
+                  </Badge>
+                )
               }
             >
-              {g.teamId ? (
-                <Badge size="xs" variant="light" c="dimmed">
-                  {game.teams.find((t) => t.id === g.teamId)?.name ?? "rotação"}
-                </Badge>
-              ) : (
-                <Badge size="xs" variant="light" c="dimmed">
-                  rotação
-                </Badge>
-              )}
+              <Badge size="xs" variant="light" c="dimmed">
+                {g.teamId ? (game.teams.find((t) => t.id === g.teamId)?.name ?? "rotação") : "rotação"}
+              </Badge>
             </PlayerRow>
           ))}
         </Stack>

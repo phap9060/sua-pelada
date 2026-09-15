@@ -56,6 +56,8 @@ export const peladas = pgTable("peladas", {
   confirmOpenTime: text("confirm_open_time").notNull().default("08:00"),
   confirmCloseWeekday: integer("confirm_close_weekday").notNull().default(2),
   confirmCloseTime: text("confirm_close_time").notNull().default("18:00"),
+  // modo lista externa: sem botão de presença; admin digita quem vai jogar e sorteia manualmente
+  useExternalList: boolean("use_external_list").notNull().default(false),
   ratingRound: integer("rating_round").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -188,6 +190,42 @@ export const gameConfirmations = pgTable(
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("game_confirmations_unique").on(t.gameId, t.userId)]
+);
+
+// lista externa: jogadores digitados pelo admin/auxiliares para um jogo.
+// membros da pelada têm userId preenchido (sorteio usa a média de bolas);
+// externos têm só name + rating (a nota serve apenas para dividir os times, não é salva em users).
+export const gameEntries = pgTable(
+  "game_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    gameId: uuid("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    group: text("group", { enum: playerPosition }).notNull().default("line"),
+    // nota usada no balanceamento (média de bolas do membro quando userId está preenchido)
+    rating: real("rating").notNull().default(3),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    orderIndex: integer("order_index").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("game_entries_game_idx").on(t.gameId)]
+);
+
+// jogadores externos (sem conta) alocados em um time sorteado
+export const teamEntries = pgTable(
+  "team_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => gameEntries.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("team_entries_unique").on(t.teamId, t.entryId)]
 );
 
 export const teams = pgTable(

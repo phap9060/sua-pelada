@@ -18,11 +18,18 @@ interface Phase {
  * O momento atual pulsa em verde; o que passou assenta em giz.
  */
 export function MatchTimeline({ game, now }: MatchTimelineProps) {
-  const phases = [
-    { label: "Confirmação abre", at: new Date(game.confirmOpenAt).getTime() },
-    { label: "Fecha · sorteio", at: new Date(game.confirmCloseAt).getTime(), sub: "times na mesa" },
-    { label: "Bola rolando", at: new Date(game.gameAt).getTime() },
-  ];
+  const phases: Phase[] =
+    game.useExternalList === true
+      ? [
+          { label: "Lista digitada", at: new Date(game.confirmOpenAt).getTime(), sub: "pelo manager" },
+          { label: "Sortear times", at: new Date(game.confirmCloseAt).getTime(), sub: "times na mesa" },
+          { label: "Bola rolando", at: new Date(game.gameAt).getTime() },
+        ]
+      : [
+          { label: "Confirmação abre", at: new Date(game.confirmOpenAt).getTime() },
+          { label: "Fecha · sorteio", at: new Date(game.confirmCloseAt).getTime(), sub: "times na mesa" },
+          { label: "Bola rolando", at: new Date(game.gameAt).getTime() },
+        ];
 
   const stateOf = (i: number): "done" | "active" | "todo" => {
     if (now >= phases[i].at && now < (phases[i + 1]?.at ?? Infinity)) return "active";

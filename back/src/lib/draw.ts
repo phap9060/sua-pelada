@@ -3,12 +3,21 @@ import { db, schema } from "../db";
 import { averageRatings } from "./ratings";
 import { notify } from "./notify";
 
-const { games, gameConfirmations, teams, teamPlayers, peladas, users } = schema;
+const { games, gameConfirmations, teams, teamPlayers, peladas, users, gameEntries, teamEntries } = schema;
 
 export interface Titular {
   userId: string;
   confirmedAt: Date;
   position: "line" | "keeper";
+}
+
+/** Entrada da lista externa de um jogo. */
+export interface ExternalEntry {
+  id: string;
+  name: string;
+  group: "line" | "keeper";
+  rating: number;
+  userId: string | null;
 }
 
 /** Confirmados do jogo (ordem de confirmação) com a posição de cada um. */
@@ -41,6 +50,21 @@ export async function getQuotaLists(gameId: string, lineCapacity: number, keeper
   };
 }
 
+/** Entradas da lista externa de um jogo, na ordem digitada. */
+export async function getEntries(gameId: string): Promise<ExternalEntry[]> {
+  return db
+    .select({
+      id: gameEntries.id,
+      name: gameEntries.name,
+      group: gameEntries.group,
+      rating: gameEntries.rating,
+      userId: gameEntries.userId,
+    })
+    .from(gameEntries)
+    .where(eq(gameEntries.gameId, gameId))
+    .orderBy(asc(gameEntries.orderIndex), asc(gameEntries.createdAt));
+}
+
 /**
  * Estado dos goleiros de um jogo sorteado:
  * - inTeams: goleiro -> teamId (1 por time, quando há goleiros suficientes)
@@ -54,6 +78,10 @@ export async function goalkeeperState(gameId: string) {
   if (!game) return { inTeams: new Map<string, string>(), rotation: [] as Titular[], excluded: [] as Titular[] };
   const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
   if (!pelada) return { inTeams: new Map<string, string>(), rotation: [] as Titular[], excluded: [] as Titular[] };
+
+  if (pelada.useExternalList) {
+    return goalkeeperStateExternal(gameId, pelada.playersPerTeam);
+  }
 
   const quotas = await getQuotaLists(gameId, pelada.listCapacity, pelada.keeperCapacity);
   const titulares = [...quotas.line.titulares, ...quotas.keepers.titulares];
@@ -163,6 +191,133 @@ export async function performDraw(gameId: string) {
   await db.update(games).set({ status: "drawn" }).where(eq(games.id, gameId));
 }
 
+/** Versão do goalkeeperState para o modo lista externa (goleiros vêm das entries). */
+async function goalkeeperStateExternal(gameId: string, playersPerTeam: number) {
+  const entries = await getEntries(gameId);
+  const keepers = entries.filter((e) => e.group === "keeper");
+  const lines = entries.filter((e) => e.group === "line");
+  const k = Math.max(1, Math.ceil(Math.max(lines.length, 1) / playersPerTeam));
+
+  // membros alocados via teamPlayers; externos via teamEntries
+  const memberRows = await db
+    .select({ teamId: teamPlayers.teamId, userId: teamPlayers.userId })
+    .from(teamPlayers)
+    .innerJoin(teams, eq(teams.id, teamPlayers.teamId))
+    .where(eq(teams.gameId, gameId));
+  const externalRows = await db
+    .select({ teamId: teamEntries.teamId, entryId: gameEntries.id, userId: gameEntries.userId })
+    .from(teamEntries)
+    .innerJoin(gameEntries, eq(gameEntries.id, teamEntries.entryId))
+    .innerJoin(teams, eq(teams.id, teamEntries.teamId))
+    .where(eq(teams.gameId, gameId));
+
+  const inTeams = new Map<string, string>();
+  for (const row of memberRows) {
+    if (keepers.some((kp) => kp.userId === row.userId)) inTeams.set(row.userId, row.teamId);
+  }
+  for (const row of externalRows) {
+    if (row.userId) inTeams.set(row.userId, row.teamId);
+  }
+
+  const rotation: Titular[] = [];
+  const excluded: Titular[] = [];
+  const now = new Date();
+  if (keepers.length >= k) {
+    for (const kp of keepers) {
+      const userId = kp.userId;
+      if (!userId || !inTeams.has(userId)) excluded.push({ userId: userId ?? kp.id, confirmedAt: now, position: "keeper" });
+    }
+  } else {
+    for (const kp of keepers) {
+      const userId = kp.userId;
+      if (!userId || !inTeams.has(userId)) rotation.push({ userId: userId ?? kp.id, confirmedAt: now, position: "keeper" });
+    }
+  }
+
+  return { inTeams, rotation, excluded };
+}
+
+/**
+ * Sorteio no modo lista externa: mesma estratégia de balanceamento do performDraw
+ * (zigue-zague por nota + goleiros), mas as notas vêm das entries:
+ * - membro (userId preenchido): média de bolas da pelada
+ * - externo: nota digitada pelo admin (não é salva no sistema)
+ */
+export async function performExternalDraw(gameId: string) {
+  const [game] = await db.select().from(games).where(eq(games.id, gameId)).limit(1);
+  if (!game || game.status === "drawn" || game.status === "finished") return;
+  const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
+  if (!pelada || !pelada.useExternalList) return;
+
+  const entries = await getEntries(gameId);
+  const keepers = entries.filter((e) => e.group === "keeper");
+  const lines = entries.filter((e) => e.group === "line");
+  if (lines.length === 0) return;
+
+  const averages = await averageRatings(pelada.id);
+  // nota efetiva: média do membro quando cadastrado; nota digitada para externos
+  const ratingOf = (e: ExternalEntry) => (e.userId ? (averages.get(e.userId) ?? e.rating) : e.rating);
+  const byRating = (a: ExternalEntry, b: ExternalEntry) => {
+    const diff = ratingOf(b) - ratingOf(a);
+    if (diff !== 0) return diff;
+    return a.id.localeCompare(b.id);
+  };
+
+  const k = Math.max(1, Math.ceil(lines.length / pelada.playersPerTeam));
+
+  // 1. zigue-zague dos jogadores de linha
+  const sortedLines = [...lines].sort(byRating);
+  const buckets: ExternalEntry[][] = Array.from({ length: k }, () => []);
+  sortedLines.forEach((p, i) => {
+    const round = Math.floor(i / k);
+    const pos = i % k;
+    const teamIdx = round % 2 === 0 ? pos : k - 1 - pos;
+    buckets[teamIdx].push(p);
+  });
+
+  // 2. goleiros: 1 por time quando suficientes; melhor goleiro -> time de linha mais fraco
+  const keeperByTeam = new Map<number, ExternalEntry>();
+  if (keepers.length >= k) {
+    const sortedKeepers = [...keepers].sort(byRating);
+    const teamsByLineStrength = buckets
+      .map((members, idx) => {
+        const avg = members.length ? members.reduce((acc, e) => acc + ratingOf(e), 0) / members.length : 0;
+        return { idx, avg };
+      })
+      .sort((a, b) => b.avg - a.avg);
+    for (let i = 0; i < k; i++) {
+      keeperByTeam.set(teamsByLineStrength[k - 1 - i].idx, sortedKeepers[i]);
+    }
+  }
+
+  // 3. grava times: membros em teamPlayers, externos em teamEntries
+  for (let i = 0; i < k; i++) {
+    const [team] = await db
+      .insert(teams)
+      .values({ gameId, name: `Time ${i + 1}`, queueOrder: i + 1 })
+      .returning();
+    const keeperEntry = keeperByTeam.get(i);
+    const members = keeperEntry ? [keeperEntry, ...buckets[i]] : buckets[i];
+    for (const e of members) {
+      if (e.userId) {
+        await db.insert(teamPlayers).values({ teamId: team.id, userId: e.userId }).onConflictDoNothing();
+      } else {
+        await db.insert(teamEntries).values({ teamId: team.id, entryId: e.id }).onConflictDoNothing();
+      }
+    }
+  }
+
+  // 4. notifica todos os membros da pelada (a lista é digitada, não há ordem de clique)
+  const { memberIds } = await import("./guards");
+  await notify(await memberIds(pelada.id), "teams_drawn", {
+    peladaId: pelada.id,
+    peladaName: pelada.name,
+    gameId,
+  });
+
+  await db.update(games).set({ status: "drawn" }).where(eq(games.id, gameId));
+}
+
 /** Garante que exista o jogo da rodada atual da pelada. Retorna o jogo. */
 export async function ensureCurrentGame(pelada: typeof peladas.$inferSelect, now = new Date()) {
   const { nextGameWindow } = await import("./time");
@@ -200,11 +355,13 @@ export async function tickGames(now = new Date()) {
     .where(inArray(games.status, ["scheduled", "open"]));
 
   for (const game of candidates) {
+    const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
+    // modo lista externa: nada é automático — admin digita a lista e sorteia manualmente
+    if (pelada?.useExternalList) continue;
     if (now >= game.confirmCloseAt) {
       await performDraw(game.id);
     } else if (now >= game.confirmOpenAt && game.status === "scheduled") {
       await db.update(games).set({ status: "open" }).where(eq(games.id, game.id));
-      const [pelada] = await db.select().from(peladas).where(eq(peladas.id, game.peladaId)).limit(1);
       if (pelada) {
         const { memberIds } = await import("./guards");
         await notify(await memberIds(pelada.id), "game_open", {

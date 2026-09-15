@@ -1,4 +1,4 @@
-import { Box, Button, Card, Group, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Box, Button, Card, Group, NumberInput, Stack, Switch, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useOutletContext } from "react-router-dom";
 import { useUpdatePelada } from "../../hooks/usePelada";
@@ -25,6 +25,7 @@ export function ConfigTab() {
       confirmOpenTime: p.confirmOpenTime,
       confirmCloseWeekday: p.confirmCloseWeekday,
       confirmCloseTime: p.confirmCloseTime,
+      useExternalList: p.useExternalList,
     },
     validate: {
       name: (v) => (v.trim().length >= 2 ? null : "Informe o nome da pelada"),
@@ -59,10 +60,16 @@ export function ConfigTab() {
           Toda {WEEKDAYS[v.gameWeekday].toLowerCase()} às {v.gameTime} · {v.playersPerTeam} por time ·{" "}
           {v.listCapacity} vagas de linha + {v.keeperCapacity} goleiros
         </Text>
-        <Text c="dimmed" size="xs" mt={2}>
-          Confirmação abre {WEEKDAYS[v.confirmOpenWeekday].toLowerCase()} às {v.confirmOpenTime} e fecha{" "}
-          {WEEKDAYS[v.confirmCloseWeekday].toLowerCase()} às {v.confirmCloseTime}
-        </Text>
+        {v.useExternalList ? (
+          <Text c="dimmed" size="xs" mt={2}>
+            Lista externa: você digita quem vai jogar e sorteia os times manualmente.
+          </Text>
+        ) : (
+          <Text c="dimmed" size="xs" mt={2}>
+            Confirmação abre {WEEKDAYS[v.confirmOpenWeekday].toLowerCase()} às {v.confirmOpenTime} e fecha{" "}
+            {WEEKDAYS[v.confirmCloseWeekday].toLowerCase()} às {v.confirmCloseTime}
+          </Text>
+        )}
       </Card>
 
       <Card shadow="sm" padding="lg" radius="lg" withBorder>
@@ -93,6 +100,14 @@ export function ConfigTab() {
 
             <Stack gap="md">
               <Text className="eyebrow">Confirmação de presença</Text>
+              <Switch
+                label="Usar lista externa"
+                description="Em vez do botão de presença, você digita quem vai jogar (membros ou convidados) e sorteia os times manualmente."
+                checked={v.useExternalList}
+                onChange={(e) => form.setFieldValue("useExternalList", e.currentTarget.checked)}
+              />
+              {!v.useExternalList && (
+                <>
               <div>
                 <Text size="sm" c="dimmed" mb={6}>
                   Abre
@@ -111,6 +126,14 @@ export function ConfigTab() {
                   <TextInput label="Hora" type="time" {...form.getInputProps("confirmCloseTime")} />
                 </Box>
               </div>
+                </>
+              )}
+              {v.useExternalList && (
+                <Text c="dimmed" size="sm">
+                  A janela de confirmação e o botão de presença ficam desativados. Membros entram pela média de bolas; convidados recebem
+                  uma nota só para dividir os times (não fica salva no sistema).
+                </Text>
+              )}
             </Stack>
 
             <Button type="submit" fullWidth size="md" loading={update.isPending}>

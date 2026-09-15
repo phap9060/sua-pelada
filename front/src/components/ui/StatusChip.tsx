@@ -13,6 +13,10 @@ export function gameChip(game: GamePayload, now: number): Chip {
   const closeAt = new Date(game.confirmCloseAt).getTime();
   if (game.status === "finished") return { label: "Finalizado", color: "gray" };
   if (game.status === "drawn") return { label: "Sorteado", color: "refletor" };
+  if (game.useExternalList === true) {
+    if (game.entries.length > 0) return { label: "Lista pronta", color: "grass" };
+    return { label: "Lista em preparo", color: "gray" };
+  }
   if (now >= closeAt) return { label: "Fechado", color: "gray" };
   if (now >= openAt) return { label: "Aberto", color: "grass", live: true };
   return { label: "Em espera", color: "gray" };

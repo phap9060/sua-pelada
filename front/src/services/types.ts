@@ -11,6 +11,7 @@ export interface CreatePeladaInput {
   confirmOpenTime: string;
   confirmCloseWeekday: number;
   confirmCloseTime: string;
+  useExternalList: boolean;
 }
 
 export type UpdatePeladaInput = Omit<CreatePeladaInput, "selfRating">;

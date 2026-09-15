@@ -25,6 +25,7 @@ const scheduleFields = t.Object({
   confirmOpenTime: time,
   confirmCloseWeekday: weekday,
   confirmCloseTime: time,
+  useExternalList: t.Boolean({ default: false }),
 });
 
 // corpos planos (sem t.Intersect — evita validação estrita por membro que rejeita campos extras)
@@ -57,6 +58,7 @@ function publicPelada(p: typeof peladas.$inferSelect) {
     confirmOpenTime: p.confirmOpenTime,
     confirmCloseWeekday: p.confirmCloseWeekday,
     confirmCloseTime: p.confirmCloseTime,
+    useExternalList: p.useExternalList,
     ratingRound: p.ratingRound,
   };
 }

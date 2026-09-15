@@ -1,4 +1,4 @@
-import { Button, Card, Group, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Badge, Button, Card, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { IconCrown } from "@tabler/icons-react";
 import { GloveIcon } from "../GloveIcon";
 import { PlayerRow } from "../ui/PlayerRow";
@@ -93,7 +93,17 @@ export function TeamsGrid({ game, canCrown, onCrown }: Props) {
               <Stack gap={1} mt="xs">
                 {t.players.map((p, pi) => (
                   <PlayerRow key={p.id} name={p.name} position={p.position} order={`${pi + 1}`}>
-                    <FieldPositionBadge primary={p.fieldPosition} secondary={p.fieldPositionSecondary} position={p.position} />
+                    {p.isExternal ? (
+                      <Badge size="xs" variant="light" c="refletor.4" className="digits">
+                        nota {(p.rating ?? 0).toFixed(1).replace(".", ",")}
+                      </Badge>
+                    ) : (
+                      <FieldPositionBadge
+                        primary={p.fieldPosition}
+                        secondary={p.fieldPositionSecondary}
+                        position={p.position}
+                      />
+                    )}
                   </PlayerRow>
                 ))}
               </Stack>

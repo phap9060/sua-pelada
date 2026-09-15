@@ -23,6 +23,7 @@ export function GameHero({ game, peladaId, peladaName }: GameHeroProps) {
   const now = Date.now();
   const confirm = useConfirmGame(peladaId);
   const cancel = useCancelConfirmation(peladaId);
+  const external = game.useExternalList === true;
 
   const openAt = new Date(game.confirmOpenAt).getTime();
   const closeAt = new Date(game.confirmCloseAt).getTime();
@@ -30,6 +31,8 @@ export function GameHero({ game, peladaId, peladaName }: GameHeroProps) {
 
   let countdown: string;
   if (game.status === "finished") countdown = "encerrado";
+  else if (game.status === "drawn") countdown = "times na mesa";
+  else if (external) countdown = "lista em preparo";
   else if (now < openAt) countdown = `abre em ${fmtCountdown(openAt - now)}`;
   else if (now < closeAt) countdown = `fecha em ${fmtCountdown(closeAt - now)}`;
   else countdown = "encerrado";
@@ -85,28 +88,36 @@ export function GameHero({ game, peladaId, peladaName }: GameHeroProps) {
 
         <MatchTimeline game={game} now={now} />
 
-        <ConfirmationButton
-          game={game}
-          now={now}
-          isBusy={confirm.isPending || cancel.isPending}
-          onConfirm={() => confirm.mutate(game.id)}
-          onCancel={() => cancel.mutate(game.id)}
-        />
-        {confirm.isError && <ErrorBox error={confirm.error} />}
+        {external ? (
+          <Text c="dimmed" size="sm" ta="center">
+            Esta pelada usa lista externa: o manager digita quem vai jogar e sorteia os times.
+          </Text>
+        ) : (
+          <>
+            <ConfirmationButton
+              game={game}
+              now={now}
+              isBusy={confirm.isPending || cancel.isPending}
+              onConfirm={() => confirm.mutate(game.id)}
+              onCancel={() => cancel.mutate(game.id)}
+            />
+            {confirm.isError && <ErrorBox error={confirm.error} />}
 
-        <Stack gap={6}>
-          <Group justify="space-between">
-            <Text size="xs" c="dimmed">
-              {confirmed} de {total} vagas preenchidas
-            </Text>
-            <Link to={`/peladas/${peladaId}`} style={{ textDecoration: "none" }}>
-              <Text size="xs" fw={600} c="grass.4">
-                Ver lista completa
-              </Text>
-            </Link>
-          </Group>
-          <Progress value={pct} color="grass" size={6} radius="xl" />
-        </Stack>
+            <Stack gap={6}>
+              <Group justify="space-between">
+                <Text size="xs" c="dimmed">
+                  {confirmed} de {total} vagas preenchidas
+                </Text>
+                <Link to={`/peladas/${peladaId}`} style={{ textDecoration: "none" }}>
+                  <Text size="xs" fw={600} c="grass.4">
+                    Ver lista completa
+                  </Text>
+                </Link>
+              </Group>
+              <Progress value={pct} color="grass" size={6} radius="xl" />
+            </Stack>
+          </>
+        )}
       </Stack>
     </Card>
   );

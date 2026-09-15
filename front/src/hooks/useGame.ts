@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 import { ALL_GAMES_KEY, gameKey } from "../lib/queryKeys";
-import { gamesService } from "../services/games";
+import { gamesService, type EntryInput } from "../services/games";
 import { peladasService } from "../services/peladas";
 
 const GAME_POLL_MS = 15_000;
@@ -73,6 +73,30 @@ export function useCrownGoalkeeper(peladaId: string) {
       queryClient.invalidateQueries({ queryKey: gameKey(peladaId) });
       queryClient.invalidateQueries({ queryKey: ALL_GAMES_KEY });
       notifications.show({ title: "Goleiro campeão consagrado!", message: "O goleiro entrou para o histórico da pelada.", color: "grass" });
+    },
+  });
+}
+
+export function useSaveEntries(peladaId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ gameId, line, keepers }: { gameId: string; line: EntryInput[]; keepers: EntryInput[] }) =>
+      gamesService.saveEntries(gameId, line, keepers),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gameKey(peladaId) });
+      notifications.show({ title: "Lista salva!", message: "Os jogadores estão prontos para o sorteio.", color: "grass" });
+    },
+  });
+}
+
+export function useDrawTeams(peladaId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (gameId: string) => gamesService.drawTeams(gameId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gameKey(peladaId) });
+      queryClient.invalidateQueries({ queryKey: ALL_GAMES_KEY });
+      notifications.show({ title: "Times sorteados!", message: "Os times estão na mesa.", color: "grass" });
     },
   });
 }

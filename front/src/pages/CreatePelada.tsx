@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Card, Group, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Box, Button, Card, Group, NumberInput, Stack, Switch, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconLock } from "@tabler/icons-react";
 import { useCreatePelada } from "../hooks/useCreatePelada";
@@ -29,6 +29,7 @@ export function CreatePelada() {
       confirmOpenTime: "08:00",
       confirmCloseWeekday: 2,
       confirmCloseTime: "18:00",
+      useExternalList: false,
     },
     validate: {
       name: (v) => (v.trim().length >= 2 ? null : "Informe o nome da pelada"),
@@ -137,6 +138,14 @@ export function CreatePelada() {
 
             <Stack gap="md">
               <Text className="eyebrow">Confirmação de presença</Text>
+              <Switch
+                label="Usar lista externa"
+                description="Em vez do botão de presença, você digita quem vai jogar (membros ou convidados) e sorteia os times manualmente."
+                checked={v.useExternalList}
+                onChange={(e) => form.setFieldValue("useExternalList", e.currentTarget.checked)}
+              />
+              {!v.useExternalList && (
+                <>
               <div>
                 <Text size="sm" c="dimmed" mb={6}>
                   Abre
@@ -158,6 +167,14 @@ export function CreatePelada() {
               <Text c="dimmed" size="sm">
                 No fechamento, o sorteio balanceado dos times acontece automaticamente.
               </Text>
+                </>
+              )}
+              {v.useExternalList && (
+                <Text c="dimmed" size="sm">
+                  A janela de confirmação e o botão de presença ficam desativados. Membros entram pela média de bolas; convidados recebem
+                  uma nota só para dividir os times.
+                </Text>
+              )}
             </Stack>
 
             <Button type="submit" fullWidth size="md" loading={create.isPending}>
