@@ -3,6 +3,7 @@ import { IconCrown, IconBrandWhatsapp } from "@tabler/icons-react";
 import { GloveIcon } from "../GloveIcon";
 import { PlayerRow } from "../ui/PlayerRow";
 import { FieldPositionBadge } from "../ui/FieldPositionBadge";
+import { ConfirmButton } from "../ui/ConfirmButton";
 import { buildWhatsAppTeamsMessage, whatsappShareUrl } from "../../utils/share";
 import type { GamePayload } from "../../types";
 
@@ -163,17 +164,22 @@ export function TeamsGrid({ game, peladaId, peladaName, canCrown, onCrown, avgBy
               </Stack>
 
               {canCrownNow && !isChampion && (
-                <Button
-                  variant="light"
+                <ConfirmButton
+                  title={`Consagrar ${t.name} campeão?`}
+                  message={`Esse é o veredito do dia: ${t.name} leva o título da rodada, o jogo é encerrado e a conquista entra para o histórico da pelada. Depois de consagrado, não dá para trocar.`}
+                  confirmLabel="Consagrar campeão"
+                  cancelLabel="Ainda não"
+                  confirmColor="refletor"
                   color="refletor"
+                  variant="light"
                   fullWidth
                   size="compact-sm"
                   mt="sm"
                   leftSection={<GloveIcon size={13} color="currentColor" />}
-                  onClick={() => onCrown(t.id)}
+                  onConfirm={() => onCrown(t.id)}
                 >
                   Consagrar campeão
-                </Button>
+                </ConfirmButton>
               )}
             </Card>
           );
