@@ -37,6 +37,28 @@ export function buildWhatsAppListMessage(game: GamePayload, peladaName: string, 
   ].join("\n");
 }
 
+/** Mensagem formatada dos times sorteados para colar no WhatsApp. */
+export function buildWhatsAppTeamsMessage(game: GamePayload, peladaName: string, appUrl: string) {
+  const teamBlocks = game.teams.map((t, i) =>
+    [
+      `*${i + 1}. ${t.name}*`,
+      ...t.players.map((p, pi) => `${p.position === "keeper" ? "🧤" : `${pi + 1}º`} ${p.name}`),
+    ].join("\n")
+  );
+  const champion = game.teams.find((t) => t.isChampion);
+  return [
+    `⚽ *${peladaName}*`,
+    `🗓 ${fmtShort(game.gameAt)}`,
+    ``,
+    `👕 *TIMES DA RODADA*`,
+    ``,
+    teamBlocks.join("\n\n"),
+    ...(champion ? [``, `🏆 *Campeão: ${champion.name}*`] : []),
+    ``,
+    `📲 Abre no app: ${appUrl}`,
+  ].join("\n");
+}
+
 export function whatsappShareUrl(message: string) {
   return `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
 }

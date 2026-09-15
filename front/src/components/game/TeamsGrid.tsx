@@ -1,12 +1,15 @@
 import { Badge, Button, Card, Group, SimpleGrid, Stack, Text } from "@mantine/core";
-import { IconCrown } from "@tabler/icons-react";
+import { IconCrown, IconBrandWhatsapp } from "@tabler/icons-react";
 import { GloveIcon } from "../GloveIcon";
 import { PlayerRow } from "../ui/PlayerRow";
 import { FieldPositionBadge } from "../ui/FieldPositionBadge";
+import { buildWhatsAppTeamsMessage, whatsappShareUrl } from "../../utils/share";
 import type { GamePayload } from "../../types";
 
 interface Props {
   game: GamePayload;
+  peladaId: string;
+  peladaName: string;
   canCrown: boolean;
   onCrown: (teamId: string) => void;
 }
@@ -22,20 +25,36 @@ const KITS = [
 const kitOf = (i: number) => KITS[i % KITS.length];
 
 /** Times sorteados apresentados como camisas penduradas + consagração do campeão. */
-export function TeamsGrid({ game, canCrown, onCrown }: Props) {
+export function TeamsGrid({ game, peladaId, peladaName, canCrown, onCrown }: Props) {
   const canCrownNow = canCrown && game.status === "drawn";
+
+  const shareWhatsApp = () => {
+    const appUrl = `${window.location.origin}/peladas/${peladaId}`;
+    window.open(whatsappShareUrl(buildWhatsAppTeamsMessage(game, peladaName, appUrl)), "_blank");
+  };
 
   return (
     <Stack gap="sm">
-      <Group justify="space-between">
+      <Group justify="space-between" wrap="nowrap">
         <Text fw={700} size="lg">
           Times da rodada
         </Text>
-        {canCrownNow && (
-          <Text c="dimmed" size="xs" ta="right" maw={260}>
-            Ao fim do dia, consagre o time que mais ganhou.
-          </Text>
-        )}
+        <Group gap="xs" wrap="nowrap">
+          <Button
+            variant="light"
+            color="grass"
+            size="compact-sm"
+            leftSection={<IconBrandWhatsapp size={15} />}
+            onClick={shareWhatsApp}
+          >
+            WhatsApp
+          </Button>
+          {canCrownNow && (
+            <Text c="dimmed" size="xs" ta="right" maw={220}>
+              Ao fim do dia, consagre o time que mais ganhou.
+            </Text>
+          )}
+        </Group>
       </Group>
 
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">

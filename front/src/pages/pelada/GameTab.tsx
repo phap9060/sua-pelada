@@ -67,7 +67,7 @@ export function GameTab() {
         />
 
         {showTeams && (
-          <TeamsGrid game={game} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
+          <TeamsGrid game={game} peladaId={peladaId} peladaName={peladaName} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
         )}
 
         {showTeams && game.rotatingGoalkeepers.length > 0 && <RotatingKeepersCard game={game} />}
@@ -92,7 +92,7 @@ export function GameTab() {
       <ConfirmationList game={game} peladaId={peladaId} peladaName={peladaName} />
 
       {showTeams && (
-        <TeamsGrid game={game} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
+        <TeamsGrid game={game} peladaId={peladaId} peladaName={peladaName} canCrown={canManage} onCrown={(teamId) => crown.mutate({ gameId: game.id, teamId })} />
       )}
 
       {showTeams && game.rotatingGoalkeepers.length > 0 && <RotatingKeepersCard game={game} />}
